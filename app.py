@@ -8,24 +8,22 @@ from werkzeug.security import generate_password_hash, check_password_hash
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'family-hub-secret-2026'
 
-# Render 환경에서 경로가 꼬이지 않도록 절대 경로로 DB 고정
+# SQLite 절대 경로 설정
 basedir = os.path.abspath(os.path.dirname(__file__))
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///' + os.path.join(basedir, 'family_v3.db')
+app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///' + os.path.join(basedir, 'family_main.db')
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 db = SQLAlchemy(app)
 login_manager = LoginManager(app)
 login_manager.login_view = 'login'
 
-# --- 데이터 모델 정의 ---
+# --- DB 모델 ---
 class User(UserMixin, db.Model):
-    __tablename__ = 'user'
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(50), unique=True, nullable=False)
     password = db.Column(db.String(200), nullable=False)
 
 class Praise(db.Model):
-    __tablename__ = 'praise'
     id = db.Column(db.Integer, primary_key=True)
     sender = db.Column(db.String(50), nullable=False)
     receiver = db.Column(db.String(50), nullable=False)
@@ -33,35 +31,35 @@ class Praise(db.Model):
     created_at = db.Column(db.DateTime, default=datetime.now)
 
 class Diary(db.Model):
-    __tablename__ = 'diary'
     id = db.Column(db.Integer, primary_key=True)
-    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    user_id = db.Column(db.Integer, nullable=False)
     content = db.Column(db.Text, nullable=False)
     created_at = db.Column(db.DateTime, default=datetime.now)
 
 class Todo(db.Model):
-    __tablename__ = 'todo'
     id = db.Column(db.Integer, primary_key=True)
-    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    user_id = db.Column(db.Integer, nullable=False)
     content = db.Column(db.String(200), nullable=False)
 
 class Notice(db.Model):
-    __tablename__ = 'notice'
     id = db.Column(db.Integer, primary_key=True)
     author = db.Column(db.String(50), nullable=False)
     content = db.Column(db.Text, nullable=False)
     created_at = db.Column(db.DateTime, default=datetime.now)
 
+# 구버전/신버전 모두 뻗지 않는 안전한 유저 로더
 @login_manager.user_loader
 def load_user(user_id):
-    return db.session.get(User, int(user_id))
+    try:
+        return User.query.filter_by(id=int(user_id)).first()
+    except Exception:
+        return None
 
-# DB 테이블 안전 생성
+# 시작 시 안전하게 테이블 생성
 with app.app_context():
     db.create_all()
 
 # --- 라우트 ---
-
 @app.route('/')
 @login_required
 def index():
@@ -125,11 +123,9 @@ def add_praise():
     receiver = request.form.get('receiver')
     content = request.form.get('content')
     if receiver and content:
-        target_user = User.query.filter_by(username=receiver).first()
-        if target_user:
-            new_praise = Praise(sender=current_user.username, receiver=receiver, content=content)
-            db.session.add(new_praise)
-            db.session.commit()
+        new_praise = Praise(sender=current_user.username, receiver=receiver, content=content)
+        db.session.add(new_praise)
+        db.session.commit()
     return redirect(url_for('index'))
 
 @app.route('/add_diary', methods=['POST'])
@@ -169,4 +165,4 @@ def logout():
     return redirect(url_for('login'))
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=5000, debug=True)
+    app.run(host='0.0.0.0', port=5000)
