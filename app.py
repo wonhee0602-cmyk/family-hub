@@ -23,7 +23,7 @@ class User(UserMixin, db.Model):
 def load_user(user_id):
     return User.query.get(int(user_id))
 
-# Render 실행 시 데이터베이스 테이블 자동 생성
+# DB 자동 생성 보장
 with app.app_context():
     db.create_all()
 
@@ -50,16 +50,17 @@ def login():
 def register():
     if request.method == 'POST':
         invite_code = request.form.get('invite_code')
-        if invite_code != '우리집1234':
+        # 변경된 초대 코드: 서희스타일스
+        if invite_code != '서희스타일스':
             flash('가족 초대 코드가 올바르지 않습니다.')
-            return redirect(url_for('register'))
+            return redirect(url_for('login'))
             
         username = request.form.get('username')
         password = request.form.get('password')
         
         if User.query.filter_by(username=username).first():
             flash('이미 존재하는 아이디입니다.')
-            return redirect(url_for('register'))
+            return redirect(url_for('login'))
             
         hashed_pw = generate_password_hash(password, method='pbkdf2:sha256')
         new_user = User(username=username, password=hashed_pw)
