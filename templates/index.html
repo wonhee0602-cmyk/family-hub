@@ -2,200 +2,170 @@
 <html lang="ko">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>우리 가족 대시보드</title>
-
-    <link href="https://cdn.jsdelivr.net/npm/gridstack@9.2.0/dist/gridstack.min.css" rel="stylesheet"/>
-    <script src="https://cdn.jsdelivr.net/npm/gridstack@9.2.0/dist/gridstack-all.js"></script>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>우리 가족 홈</title>
     <style>
-        body { font-family: sans-serif; background: #e9ecef; margin: 0; padding: 12px; }
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+        body { background: #f8fafc; color: #1e293b; padding: 20px 16px; max-width: 600px; margin: 0 auto; }
+        
+        /* 상단 헤더 & 우편함 버튼 */
+        header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; padding-bottom: 12px; border-bottom: 2px solid #e2e8f0; }
+        h1 { font-size: 20px; font-weight: 700; color: #0f172a; }
+        .nav-right { display: flex; align-items: center; gap: 14px; }
+        
+        .mail-btn { position: relative; background: none; border: none; font-size: 24px; cursor: pointer; padding: 4px; display: flex; align-items: center; }
+        .mail-badge { position: absolute; top: 0; right: -4px; background: #ef4444; color: white; border-radius: 50%; font-size: 11px; font-weight: bold; width: 18px; height: 18px; display: flex; align-items: center; justify-content: center; }
+        .logout-btn { color: #64748b; text-decoration: none; font-size: 14px; font-weight: 600; }
+        .logout-btn:hover { color: #ef4444; }
 
-        /* 상단 헤더 및 좌측 프로필 영역 */
-        header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; position: relative; }
-        .user-profile { display: flex; align-items: center; gap: 10px; cursor: pointer; user-select: none; }
-        .avatar {
-            width: 44px; height: 44px; border-radius: 50%; background: #007bff; color: white;
-            display: flex; align-items: center; justify-content: center; font-size: 20px; font-weight: bold;
-            box-shadow: 0 2px 6px rgba(0,123,255,0.4); border: 2px solid #fff;
-        }
-        .user-info { display: flex; flex-direction: column; }
-        .user-name { font-weight: bold; font-size: 16px; }
-        .user-bday { font-size: 12px; color: #666; }
+        /* 카드 레이아웃 */
+        .card { background: white; border-radius: 14px; padding: 18px; margin-bottom: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.04); border: 1px solid #e2e8f0; }
+        .card h2 { font-size: 16px; margin-bottom: 12px; display: flex; align-items: center; gap: 6px; }
+        form { display: flex; flex-direction: column; gap: 8px; margin-bottom: 14px; }
+        input[type="text"], textarea, select { width: 100%; padding: 10px 12px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 14px; outline: none; }
+        input[type="text"]:focus, textarea:focus, select:focus { border-color: #2563eb; }
+        textarea { resize: vertical; min-height: 60px; }
+        button.action-btn { background: #2563eb; color: white; border: none; padding: 10px; border-radius: 8px; font-weight: 600; cursor: pointer; font-size: 14px; }
+        button.action-btn:hover { background: #1d4ed8; }
+        
+        .item-list { list-style: none; display: flex; flex-direction: column; gap: 8px; }
+        .item { background: #f1f5f9; padding: 10px 12px; border-radius: 8px; font-size: 14px; line-height: 1.4; }
+        .item-meta { font-size: 11px; color: #64748b; margin-top: 4px; display: block; }
+        .empty-text { font-size: 13px; color: #94a3b8; text-align: center; padding: 8px 0; }
 
-        /* 프로필 클릭 시 나타나는 팝업 메뉴 */
-        .profile-menu {
-            display: none; position: absolute; top: 52px; left: 0; background: white;
-            border-radius: 8px; box-shadow: 0 4px 15px rgba(0,0,0,0.15); padding: 12px; z-index: 1000; width: 220px;
-        }
-        .profile-menu.active { display: block; }
-        .profile-menu input[type="date"] { width: 100%; padding: 6px; box-sizing: border-box; margin: 6px 0; border: 1px solid #ccc; border-radius: 4px; }
-        .profile-menu button { width: 100%; padding: 7px; background: #28a745; color: white; border: none; border-radius: 4px; font-weight: bold; cursor: pointer; }
-
-        /* 위젯 박스 스타일 */
-        .grid-stack-item-content {
-            background: white; border-radius: 12px; padding: 14px; box-shadow: 0 2px 8px rgba(0,0,0,0.06);
-            display: flex; flex-direction: column; overflow: hidden;
-        }
-        .widget-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #f1f3f5; padding-bottom: 8px; font-weight: bold; }
-        .widget-body { flex: 1; overflow-y: auto; margin-top: 10px; font-size: 14px; }
-        .close-btn { cursor: pointer; color: #888; font-size: 16px; border: none; background: none; }
-        .close-btn:hover { color: #ff4d4f; }
-        input, textarea, button { font-size: 13px; }
-        .restore-bar { background: #fff; padding: 10px; border-radius: 8px; margin-bottom: 12px; font-size: 13px; display: flex; flex-wrap: wrap; gap: 10px; }
+        /* 우편함 팝업(모달) 스타일 */
+        .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 100; justify-content: center; align-items: center; padding: 16px; }
+        .modal-overlay.active { display: flex; }
+        .modal-box { background: white; width: 100%; max-width: 480px; border-radius: 16px; max-height: 85vh; display: flex; flex-direction: column; overflow: hidden; box-shadow: 0 10px 25px rgba(0,0,0,0.2); }
+        .modal-header { padding: 16px 20px; border-bottom: 1px solid #e2e8f0; display: flex; justify-content: space-between; align-items: center; }
+        .modal-header h3 { font-size: 17px; font-weight: bold; }
+        .close-btn { background: none; border: none; font-size: 20px; cursor: pointer; color: #64748b; }
+        .modal-content { padding: 18px 20px; overflow-y: auto; }
+        .mail-section-title { font-size: 14px; font-weight: bold; color: #475569; margin: 16px 0 8px 0; }
+        .mail-item { background: #fef3c7; border: 1px solid #fde68a; padding: 12px; border-radius: 10px; margin-bottom: 8px; font-size: 14px; }
+        .mail-sender { font-weight: bold; color: #b45309; }
     </style>
 </head>
 <body>
 
 <header>
-    <!-- 왼쪽 구석 계정 프사 -->
-    <div class="user-profile" onclick="toggleProfileMenu()">
-        <div class="avatar">{{ user.username[0] }}</div>
-        <div class="user-info">
-            <span class="user-name">🏡 {{ user.username }}</span>
-            <span class="user-bday">
-                {% if user.birthday %}🎂 {{ user.birthday }}{% else %}생일 등록 필요{% endif %}
-            </span>
-        </div>
+    <h1>🏠 {{ user.username }}님의 가족 홈</h1>
+    <div class="nav-right">
+        <!-- 오른쪽 상단 우편 버튼 -->
+        <button class="mail-btn" onclick="openMailModal()" title="칭찬 우편함">
+            💌
+            {% if my_praises|length > 0 %}
+            <span class="mail-badge">{{ my_praises|length }}</span>
+            {% endif %}
+        </button>
+        <a href="/logout" class="logout-btn">로그아웃</a>
     </div>
-
-    <!-- 프사 누르면 열리는 생일 정하기 팝업 -->
-    <div class="profile-menu" id="profileMenu">
-        <div style="font-weight: bold; font-size: 13px; margin-bottom: 4px;">🎂 생일 정하기</div>
-        <form action="/set_birthday" method="POST">
-            <input type="date" name="birthday" value="{{ user.birthday or '' }}" required>
-            <button type="submit">생일 저장</button>
-        </form>
-    </div>
-
-    <a href="/logout" style="text-decoration: none; color: #dc3545; font-weight: bold; font-size: 14px;">로그아웃</a>
 </header>
 
-<div class="restore-bar">
-    <span><b>위젯:</b></span>
-    <label><input type="checkbox" id="chk-notice" checked onchange="toggleWidget('notice')"> 📢 공지</label>
-    <label><input type="checkbox" id="chk-todo" checked onchange="toggleWidget('todo')"> ✅ 할일</label>
-    <label><input type="checkbox" id="chk-diary" checked onchange="toggleWidget('diary')"> 📔 일기</label>
-    <label><input type="checkbox" id="chk-praise" checked onchange="toggleWidget('praise')"> 👏 칭찬</label>
-</div>
+<!-- 1. 가족 공지사항 -->
+<section class="card">
+    <h2>📢 가족 공지사항</h2>
+    <form action="/add_notice" method="POST">
+        <textarea name="content" placeholder="가족에게 알릴 내용을 입력하세요..." required></textarea>
+        <button type="submit" class="action-btn">공지 등록</button>
+    </form>
+    <ul class="item-list">
+        {% for notice in notices %}
+        <li class="item">
+            <strong>{{ notice.author }}:</strong> {{ notice.content }}
+            <span class="item-meta">{{ notice.created_at.strftime('%Y-%m-%d %H:%M') }}</span>
+        </li>
+        {% else %}
+        <li class="empty-text">등록된 공지사항이 없습니다.</li>
+        {% endfor %}
+    </ul>
+</section>
 
-<div class="grid-stack">
-    <!-- 1. 공지사항 -->
-    <div class="grid-stack-item" gs-id="notice" gs-w="6" gs-h="4" gs-x="0" gs-y="0">
-        <div class="grid-stack-item-content">
-            <div class="widget-header">
-                📢 가족 공지사항
-                <button class="close-btn" onclick="hideWidget('notice')">✕</button>
-            </div>
-            <div class="widget-body">
-                <form action="/add_notice" method="POST" style="margin-bottom: 8px; display: flex; gap: 5px;">
-                    <input type="text" name="content" placeholder="공지 등록..." style="flex: 1; padding: 6px;" required>
-                    <button type="submit">등록</button>
-                </form>
-                <ul>
-                    {% for n in notices %}
-                    <li><b>{{ n.author }}</b>: {{ n.content }}</li>
-                    {% endfor %}
-                </ul>
-            </div>
+<!-- 2. 내 할 일 (나만 봄) -->
+<section class="card">
+    <h2>✅ 내 할 일</h2>
+    <form action="/add_todo" method="POST" style="flex-direction: row;">
+        <input type="text" name="content" placeholder="오늘 할 일을 입력하세요" required style="flex: 1;">
+        <button type="submit" class="action-btn" style="width: auto; padding: 0 16px;">추가</button>
+    </form>
+    <ul class="item-list">
+        {% for todo in todos %}
+        <li class="item">• {{ todo.content }}</li>
+        {% else %}
+        <li class="empty-text">등록된 할 일이 없습니다.</li>
+        {% endfor %}
+    </ul>
+</section>
+
+<!-- 3. 나만의 비밀 일기 (나만 봄) -->
+<section class="card">
+    <h2>📖 나만의 비밀 일기</h2>
+    <form action="/add_diary" method="POST">
+        <textarea name="content" placeholder="오늘 하루는 어땠나요? (나만 볼 수 있어요)" required></textarea>
+        <button type="submit" class="action-btn" style="background: #6366f1;">일기 저장</button>
+    </form>
+    <ul class="item-list">
+        {% for diary in diaries %}
+        <li class="item">
+            {{ diary.content }}
+            <span class="item-meta">{{ diary.created_at.strftime('%Y-%m-%d %H:%M') }}</span>
+        </li>
+        {% else %}
+        <li class="empty-text">작성된 일기가 없습니다.</li>
+        {% endfor %}
+    </ul>
+</section>
+
+<!-- 우편함 모달 창 -->
+<div class="modal-overlay" id="mailModal" onclick="closeMailModal(event)">
+    <div class="modal-box" onclick="event.stopPropagation()">
+        <div class="modal-header">
+            <h3>💌 칭찬 우편함</h3>
+            <button class="close-btn" onclick="closeMailModal()">✕</button>
         </div>
-    </div>
-
-    <!-- 2. 해야할 일 -->
-    <div class="grid-stack-item" gs-id="todo" gs-w="6" gs-h="4" gs-x="6" gs-y="0">
-        <div class="grid-stack-item-content">
-            <div class="widget-header">
-                ✅ 내 할 일
-                <button class="close-btn" onclick="hideWidget('todo')">✕</button>
-            </div>
-            <div class="widget-body">
-                <form action="/add_todo" method="POST" style="margin-bottom: 8px; display: flex; gap: 5px;">
-                    <input type="text" name="content" placeholder="할 일 추가..." style="flex: 1; padding: 6px;" required>
-                    <button type="submit">추가</button>
-                </form>
-                <ul>
-                    {% for t in todos %}
-                    <li>
-                        <a href="/toggle_todo/{{ t.id }}" style="text-decoration: none; color: inherit;">
-                            {% if t.done %}<s>{{ t.content }}</s> (완료){% else %}{{ t.content }}{% endif %}
-                        </a>
-                    </li>
+        <div class="modal-content">
+            <!-- 칭찬 보내기 폼 -->
+            <div class="mail-section-title">칭찬 편지 쓰기</div>
+            <form action="/add_praise" method="POST">
+                <select name="receiver" required>
+                    <option value="" disabled selected>칭찬받을 가족 선택</option>
+                    {% for u in all_users %}
+                    <option value="{{ u.username }}">{{ u.username }}</option>
                     {% endfor %}
-                </ul>
-            </div>
-        </div>
-    </div>
+                </select>
+                <textarea name="content" placeholder="따뜻한 칭찬 한마디를 적어보세요..." required></textarea>
+                <button type="submit" class="action-btn" style="background: #10b981;">편지 보내기</button>
+            </form>
 
-    <!-- 3. 일기 -->
-    <div class="grid-stack-item" gs-id="diary" gs-w="6" gs-h="4" gs-x="0" gs-y="4">
-        <div class="grid-stack-item-content">
-            <div class="widget-header">
-                📔 나만의 비밀 일기
-                <button class="close-btn" onclick="hideWidget('diary')">✕</button>
-            </div>
-            <div class="widget-body">
-                <form action="/add_diary" method="POST" style="margin-bottom: 8px;">
-                    <textarea name="content" placeholder="오늘 어떤 일이 있었나요?" style="width: 100%; box-sizing: border-box; height: 50px; padding: 6px;" required></textarea>
-                    <button type="submit" style="margin-top: 4px;">저장</button>
-                </form>
-                {% for d in diaries %}
-                <div style="border-bottom: 1px dashed #ccc; padding: 4px 0;">
-                    <small style="color: #888;">{{ d.date }}</small><br>{{ d.content }}
+            <hr style="border: none; border-top: 1px dashed #cbd5e1; margin: 16px 0;">
+
+            <!-- 나에게 도착한 칭찬 목록 -->
+            <div class="mail-section-title">내가 받은 칭찬 ({{ my_praises|length }})</div>
+            <div class="item-list">
+                {% for praise in my_praises %}
+                <div class="mail-item">
+                    <span class="mail-sender">From. {{ praise.sender }}</span>
+                    <div style="margin-top: 4px;">{{ praise.content }}</div>
+                    <span class="item-meta">{{ praise.created_at.strftime('%Y-%m-%d %H:%M') }}</span>
                 </div>
+                {% else %}
+                <div class="empty-text">아직 도착한 칭찬 편지가 없습니다.</div>
                 {% endfor %}
-            </div>
-        </div>
-    </div>
-
-    <!-- 4. 칭찬하기 -->
-    <div class="grid-stack-item" gs-id="praise" gs-w="6" gs-h="4" gs-x="6" gs-y="4">
-        <div class="grid-stack-item-content">
-            <div class="widget-header">
-                👏 칭찬 타임
-                <button class="close-btn" onclick="hideWidget('praise')">✕</button>
-            </div>
-            <div class="widget-body">
-                <form action="/add_praise" method="POST" style="margin-bottom: 8px; display: flex; flex-direction: column; gap: 5px;">
-                    <input type="text" name="to_user" placeholder="누구에게?" style="padding: 6px;" required>
-                    <input type="text" name="content" placeholder="칭찬 한마디!" style="padding: 6px;" required>
-                    <button type="submit">칭찬 보내기</button>
-                </form>
-                <ul>
-                    {% for p in praises %}
-                    <li><b>{{ p.to_user }}</b>님에게: {{ p.content }} <small>({{ p.from_user }})</small></li>
-                    {% endfor %}
-                </ul>
             </div>
         </div>
     </div>
 </div>
 
 <script>
-    const grid = GridStack.init({
-        cellHeight: 80,
-        animate: true,
-        resizable: { handles: 'e, se, s, sw, w' }
-    });
-
-    function toggleProfileMenu() {
-        const menu = document.getElementById('profileMenu');
-        menu.classList.toggle('active');
+    function openMailModal() {
+        document.getElementById('mailModal').classList.add('active');
     }
-
-    function hideWidget(id) {
-        const el = document.querySelector(`[gs-id="${id}"]`);
-        if (el) {
-            el.style.display = 'none';
-            document.getElementById(`chk-${id}`).checked = false;
-        }
-    }
-
-    function toggleWidget(id) {
-        const el = document.querySelector(`[gs-id="${id}"]`);
-        const chk = document.getElementById(`chk-${id}`);
-        if (el) {
-            el.style.display = chk.checked ? 'block' : 'none';
+    function closeMailModal(e) {
+        if (!e || e.target.id === 'mailModal' || e.target.classList.contains('close-btn')) {
+            document.getElementById('mailModal').classList.remove('active');
         }
     }
 </script>
+
 </body>
 </html>
