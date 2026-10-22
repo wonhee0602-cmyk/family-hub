@@ -7,7 +7,7 @@ from werkzeug.security import generate_password_hash, check_password_hash
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'family-hub-secret-2026'
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///family.db'
+app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///family_v2.db'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 db = SQLAlchemy(app)
@@ -21,29 +21,29 @@ class User(UserMixin, db.Model):
     password = db.Column(db.String(200), nullable=False)
     birthday = db.Column(db.String(20), default='')
 
-# 1. 칭찬 모델
+# 칭찬(우편함) 모델
 class Praise(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    sender = db.Column(db.String(50), nullable=False)
-    receiver = db.Column(db.String(50), nullable=False)
+    sender = db.Column(db.String(50), nullable=False)      # 보낸 사람
+    receiver = db.Column(db.String(50), nullable=False)    # 받는 사람
     content = db.Column(db.Text, nullable=False)
     created_at = db.Column(db.DateTime, default=datetime.now)
 
-# 2. 나만의 일기 모델 (작성자 본인만 봄)
+# 나만의 일기 모델 (작성자 본인만 봄)
 class Diary(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
     content = db.Column(db.Text, nullable=False)
     created_at = db.Column(db.DateTime, default=datetime.now)
 
-# 3. 내 할 일 모델 (작성자 본인만 봄)
+# 내 할 일 모델
 class Todo(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
     content = db.Column(db.String(200), nullable=False)
     completed = db.Column(db.Boolean, default=False)
 
-# 4. 가족 공지사항 모델 (가족 전체 공유)
+# 가족 공지사항 모델
 class Notice(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     author = db.Column(db.String(50), nullable=False)
@@ -54,7 +54,6 @@ class Notice(db.Model):
 def load_user(user_id):
     return User.query.get(int(user_id))
 
-# DB 테이블 생성 보장
 with app.app_context():
     db.create_all()
 
@@ -64,7 +63,8 @@ with app.app_context():
 @login_required
 def index():
     users = User.query.all()
-    praises = Praise.query.order_by(Praise.created_at.desc()).all()
+    # 로그인한 사용자 본인에게 온 칭찬만 조회
+    my_praises = Praise.query.filter_by(receiver=current_user.username).order_by(Praise.created_at.desc()).all()
     diaries = Diary.query.filter_by(user_id=current_user.id).order_by(Diary.created_at.desc()).all()
     todos = Todo.query.filter_by(user_id=current_user.id).all()
     notices = Notice.query.order_by(Notice.created_at.desc()).all()
@@ -72,24 +72,26 @@ def index():
     return render_template('index.html', 
                            user=current_user, 
                            all_users=users,
-                           praises=praises,
+                           my_praises=my_praises,
                            diaries=diaries,
                            todos=todos,
                            notices=notices)
 
-# 칭찬 보내기 기능
+# 칭찬 편지 보내기 기능
 @app.route('/add_praise', methods=['POST'])
 @login_required
 def add_praise():
     receiver = request.form.get('receiver')
     content = request.form.get('content')
     if receiver and content:
-        new_praise = Praise(sender=current_user.username, receiver=receiver, content=content)
-        db.session.add(new_praise)
-        db.session.commit()
+        # 받는 사람이 실제 존재하는지 확인 후 저장
+        target_user = User.query.filter_by(username=receiver).first()
+        if target_user:
+            new_praise = Praise(sender=current_user.username, receiver=receiver, content=content)
+            db.session.add(new_praise)
+            db.session.commit()
     return redirect(url_for('index'))
 
-# 나만의 일기 저장 기능
 @app.route('/add_diary', methods=['POST'])
 @login_required
 def add_diary():
@@ -100,7 +102,6 @@ def add_diary():
         db.session.commit()
     return redirect(url_for('index'))
 
-# 할 일 추가 기능
 @app.route('/add_todo', methods=['POST'])
 @login_required
 def add_todo():
@@ -111,7 +112,6 @@ def add_todo():
         db.session.commit()
     return redirect(url_for('index'))
 
-# 공지사항 등록 기능
 @app.route('/add_notice', methods=['POST'])
 @login_required
 def add_notice():
@@ -122,7 +122,6 @@ def add_notice():
         db.session.commit()
     return redirect(url_for('index'))
 
-# 로그인
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     if request.method == 'POST':
@@ -135,7 +134,6 @@ def login():
         flash('아이디 또는 비밀번호가 일치하지 않습니다.')
     return render_template('login.html')
 
-# 회원가입
 @app.route('/register', methods=['GET', 'POST'])
 def register():
     if request.method == 'POST':
@@ -160,16 +158,6 @@ def register():
         return redirect(url_for('index'))
     return render_template('login.html')
 
-# 생일 등록
-@app.route('/set_birthday', methods=['POST'])
-@login_required
-def set_birthday():
-    birthday = request.form.get('birthday')
-    current_user.birthday = birthday
-    db.session.commit()
-    return redirect(url_for('index'))
-
-# 로그아웃
 @app.route('/logout')
 @login_required
 def logout():
