@@ -7,44 +7,46 @@ from werkzeug.security import generate_password_hash, check_password_hash
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'family-hub-secret-2026'
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///family_v2.db'
+
+# Render 환경에서 경로가 꼬이지 않도록 절대 경로로 DB 고정
+basedir = os.path.abspath(os.path.dirname(__file__))
+app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///' + os.path.join(basedir, 'family_v3.db')
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 db = SQLAlchemy(app)
 login_manager = LoginManager(app)
 login_manager.login_view = 'login'
 
-# --- 데이터베이스 테이블 정의 ---
+# --- 데이터 모델 정의 ---
 class User(UserMixin, db.Model):
+    __tablename__ = 'user'
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(50), unique=True, nullable=False)
     password = db.Column(db.String(200), nullable=False)
-    birthday = db.Column(db.String(20), default='')
 
-# 칭찬(우편함) 모델
 class Praise(db.Model):
+    __tablename__ = 'praise'
     id = db.Column(db.Integer, primary_key=True)
-    sender = db.Column(db.String(50), nullable=False)      # 보낸 사람
-    receiver = db.Column(db.String(50), nullable=False)    # 받는 사람
+    sender = db.Column(db.String(50), nullable=False)
+    receiver = db.Column(db.String(50), nullable=False)
     content = db.Column(db.Text, nullable=False)
     created_at = db.Column(db.DateTime, default=datetime.now)
 
-# 나만의 일기 모델 (작성자 본인만 봄)
 class Diary(db.Model):
+    __tablename__ = 'diary'
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
     content = db.Column(db.Text, nullable=False)
     created_at = db.Column(db.DateTime, default=datetime.now)
 
-# 내 할 일 모델
 class Todo(db.Model):
+    __tablename__ = 'todo'
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
     content = db.Column(db.String(200), nullable=False)
-    completed = db.Column(db.Boolean, default=False)
 
-# 가족 공지사항 모델
 class Notice(db.Model):
+    __tablename__ = 'notice'
     id = db.Column(db.Integer, primary_key=True)
     author = db.Column(db.String(50), nullable=False)
     content = db.Column(db.Text, nullable=False)
@@ -52,18 +54,18 @@ class Notice(db.Model):
 
 @login_manager.user_loader
 def load_user(user_id):
-    return User.query.get(int(user_id))
+    return db.session.get(User, int(user_id))
 
+# DB 테이블 안전 생성
 with app.app_context():
     db.create_all()
 
-# --- 라우트 및 기능 ---
+# --- 라우트 ---
 
 @app.route('/')
 @login_required
 def index():
     users = User.query.all()
-    # 로그인한 사용자 본인에게 온 칭찬만 조회
     my_praises = Praise.query.filter_by(receiver=current_user.username).order_by(Praise.created_at.desc()).all()
     diaries = Diary.query.filter_by(user_id=current_user.id).order_by(Diary.created_at.desc()).all()
     todos = Todo.query.filter_by(user_id=current_user.id).all()
@@ -77,14 +79,52 @@ def index():
                            todos=todos,
                            notices=notices)
 
-# 칭찬 편지 보내기 기능
+@app.route('/login', methods=['GET', 'POST'])
+def login():
+    if current_user.is_authenticated:
+        return redirect(url_for('index'))
+    if request.method == 'POST':
+        username = request.form.get('username')
+        password = request.form.get('password')
+        user = User.query.filter_by(username=username).first()
+        if user and check_password_hash(user.password, password):
+            login_user(user)
+            return redirect(url_for('index'))
+        flash('아이디 또는 비밀번호가 일치하지 않습니다.')
+    return render_template('login.html')
+
+@app.route('/register', methods=['GET', 'POST'])
+def register():
+    if current_user.is_authenticated:
+        return redirect(url_for('index'))
+    if request.method == 'POST':
+        invite_code = request.form.get('invite_code')
+        if invite_code != '서희스타일스':
+            flash('가족 초대 코드가 올바르지 않습니다.')
+            return redirect(url_for('login'))
+            
+        username = request.form.get('username')
+        password = request.form.get('password')
+        
+        if User.query.filter_by(username=username).first():
+            flash('이미 존재하는 아이디입니다.')
+            return redirect(url_for('login'))
+            
+        hashed_pw = generate_password_hash(password, method='pbkdf2:sha256')
+        new_user = User(username=username, password=hashed_pw)
+        db.session.add(new_user)
+        db.session.commit()
+        
+        login_user(new_user)
+        return redirect(url_for('index'))
+    return render_template('login.html')
+
 @app.route('/add_praise', methods=['POST'])
 @login_required
 def add_praise():
     receiver = request.form.get('receiver')
     content = request.form.get('content')
     if receiver and content:
-        # 받는 사람이 실제 존재하는지 확인 후 저장
         target_user = User.query.filter_by(username=receiver).first()
         if target_user:
             new_praise = Praise(sender=current_user.username, receiver=receiver, content=content)
@@ -121,42 +161,6 @@ def add_notice():
         db.session.add(new_notice)
         db.session.commit()
     return redirect(url_for('index'))
-
-@app.route('/login', methods=['GET', 'POST'])
-def login():
-    if request.method == 'POST':
-        username = request.form.get('username')
-        password = request.form.get('password')
-        user = User.query.filter_by(username=username).first()
-        if user and check_password_hash(user.password, password):
-            login_user(user)
-            return redirect(url_for('index'))
-        flash('아이디 또는 비밀번호가 일치하지 않습니다.')
-    return render_template('login.html')
-
-@app.route('/register', methods=['GET', 'POST'])
-def register():
-    if request.method == 'POST':
-        invite_code = request.form.get('invite_code')
-        if invite_code != '서희스타일스':
-            flash('가족 초대 코드가 올바르지 않습니다.')
-            return redirect(url_for('login'))
-            
-        username = request.form.get('username')
-        password = request.form.get('password')
-        
-        if User.query.filter_by(username=username).first():
-            flash('이미 존재하는 아이디입니다.')
-            return redirect(url_for('login'))
-            
-        hashed_pw = generate_password_hash(password, method='pbkdf2:sha256')
-        new_user = User(username=username, password=hashed_pw)
-        db.session.add(new_user)
-        db.session.commit()
-        
-        login_user(new_user)
-        return redirect(url_for('index'))
-    return render_template('login.html')
 
 @app.route('/logout')
 @login_required
