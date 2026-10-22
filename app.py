@@ -5,7 +5,7 @@ from flask_login import LoginManager, UserMixin, login_user, login_required, log
 from werkzeug.security import generate_password_hash, check_password_hash
 
 app = Flask(__name__)
-app.config['SECRET_KEY'] = 'family-hub-secret-key-2026'
+app.config['SECRET_KEY'] = 'family-hub-secret-2026'
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///family.db'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
@@ -39,7 +39,6 @@ def login():
         username = request.form.get('username')
         password = request.form.get('password')
         user = User.query.filter_by(username=username).first()
-        
         if user and check_password_hash(user.password, password):
             login_user(user)
             return redirect(url_for('index'))
@@ -50,7 +49,7 @@ def login():
 def register():
     if request.method == 'POST':
         invite_code = request.form.get('invite_code')
-        # 변경된 초대 코드: 서희스타일스
+        # 요청하신 가족 초대 코드
         if invite_code != '서희스타일스':
             flash('가족 초대 코드가 올바르지 않습니다.')
             return redirect(url_for('login'))
