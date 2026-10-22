@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <title>우리 가족 공간 - 로그인</title>
+    <style>
+        body {
+            font-family: sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background: #f0f2f5;
+            margin: 0;
+        }
+        .card {
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            width: 330px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+        .input-group {
+            position: relative;
+            margin: 8px 0;
+            display: flex;
+            align-items: center;
+        }
+        .input-group input {
+            width: 100%;
+            padding: 10px 42px 10px 12px;
+            box-sizing: border-box;
+            border: 1px solid #ccc;
+            border-radius: 6px;
+            font-size: 14px;
+        }
+        .toggle-pwd {
+            position: absolute;
+            right: 10px;
+            cursor: pointer;
+            border: none;
+            background: none;
+            font-size: 16px;
+            padding: 0;
+            user-select: none;
+        }
+        .submit-btn {
+            width: 100%;
+            padding: 11px;
+            margin-top: 12px;
+            border: none;
+            border-radius: 6px;
+            background: #007bff;
+            color: white;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 15px;
+        }
+        .msg {
+            color: #e03131;
+            font-size: 13px;
+            text-align: center;
+            margin-bottom: 10px;
+        }
+        .toggle-btn {
+            text-align: center;
+            font-size: 13px;
+            color: #555;
+            cursor: pointer;
+            margin-top: 15px;
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+<div class="card">
+    <h2 style="text-align: center; margin-top: 0;">🏡 우리 가족 홈</h2>
+
+    {% with messages = get_flashed_messages() %}
+        {% if messages %}
+            <div class="msg">{{ messages[0] }}</div>
+        {% endif %}
+    {% endwith %}
+
+    <!-- 1. 로그인 폼 -->
+    <form id="loginForm" method="POST">
+        <input type="hidden" name="action" value="login">
+
+        <div class="input-group">
+            <input type="text" name="username" placeholder="이름 / 닉네임" required>
+        </div>
+
+        <div class="input-group">
+            <input type="password" id="loginPassword" name="password" placeholder="비밀번호" required>
+            <button type="button" class="toggle-pwd" onclick="toggleVisibility('loginPassword', this)">👁️</button>
+        </div>
+
+        <button type="submit" class="submit-btn">로그인</button>
+        <div class="toggle-btn" onclick="toggleMode()">처음이신가요? 가족 등록하기</div>
+    </form>
+
+    <!-- 2. 가족 등록(회원가입) 폼 -->
+    <form id="regForm" method="POST" style="display: none;">
+        <input type="hidden" name="action" value="register">
+
+        <div class="input-group">
+            <input type="text" name="username" placeholder="이름 / 닉네임" required>
+        </div>
+
+        <div class="input-group">
+            <input type="password" id="regPassword" name="password" placeholder="사용할 비밀번호" required>
+            <button type="button" class="toggle-pwd" onclick="toggleVisibility('regPassword', this)">👁️</button>
+        </div>
+
+        <div class="input-group">
+            <input type="password" id="regInviteCode" name="invite_code" placeholder="가족 초대코드 입력" required>
+            <button type="button" class="toggle-pwd" onclick="toggleVisibility('regInviteCode', this)">👁️</button>
+        </div>
+
+        <button type="submit" class="submit-btn" style="background: #28a745;">가족 계정 생성</button>
+        <div class="toggle-btn" onclick="toggleMode()">로그인으로 돌아가기</div>
+    </form>
+</div>
+
+<script>
+// 로그인 <-> 가족 등록 폼 전환
+function toggleMode() {
+    const l = document.getElementById('loginForm');
+    const r = document.getElementById('regForm');
+    if (l.style.display === 'none') {
+        l.style.display = 'block';
+        r.style.display = 'none';
+    } else {
+        l.style.display = 'none';
+        r.style.display = 'block';
+    }
+}
+
+// 비밀번호 숨기기 / 보이기 토글 함수
+function toggleVisibility(inputId, btn) {
+    const input = document.getElementById(inputId);
+    if (input.type === 'password') {
+        input.type = 'text';
+        btn.textContent = '🙈'; // 눈 가린 원숭이 (보이는 상태)
+    } else {
+        input.type = 'password';
+        btn.textContent = '👁️'; // 눈 모양 (숨긴 상태)
+    }
+}
+</script>
+</body>
+</html>
