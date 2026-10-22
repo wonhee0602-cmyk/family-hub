@@ -3,27 +3,26 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>가족 허브 - 로그인</title>
+    <title>우리 가족 홈</title>
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
         body { background: #f0f2f5; display: flex; align-items: center; justify-content: center; min-height: 100vh; padding: 20px; }
-        .card { background: white; padding: 30px; border-radius: 16px; box-shadow: 0 4px 20px rgba(0,0,0,0.08); width: 100%; max-width: 380px; }
-        h2 { text-align: center; margin-bottom: 20px; color: #333; }
-        .tabs { display: flex; margin-bottom: 20px; border-bottom: 2px solid #eee; }
-        .tab { flex: 1; text-align: center; padding: 10px; cursor: pointer; font-weight: bold; color: #888; }
-        .tab.active { color: #4f46e5; border-bottom: 2px solid #4f46e5; margin-bottom: -2px; }
-        .input-group { margin-bottom: 15px; }
-        .input-group label { display: block; margin-bottom: 6px; font-size: 14px; color: #555; }
-        .input-group input { width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 15px; }
-        button { width: 100%; padding: 12px; background: #4f46e5; color: white; border: none; border-radius: 8px; font-size: 16px; font-weight: bold; cursor: pointer; margin-top: 10px; }
-        button:hover { background: #4338ca; }
-        .flash { background: #fee2e2; color: #dc2626; padding: 10px; border-radius: 8px; margin-bottom: 15px; font-size: 14px; text-align: center; }
+        .card { background: white; padding: 32px 28px; border-radius: 16px; box-shadow: 0 4px 20px rgba(0,0,0,0.08); width: 100%; max-width: 360px; text-align: center; }
+        h2 { font-size: 22px; font-weight: 700; margin-bottom: 18px; color: #222; }
+        .flash { color: #e11d48; font-size: 14px; margin-bottom: 14px; font-weight: 500; }
+        .input-box { position: relative; margin-bottom: 12px; }
+        .input-box input { width: 100%; padding: 14px 44px 14px 14px; border: 1px solid #d1d5db; border-radius: 10px; font-size: 15px; outline: none; }
+        .input-box input:focus { border-color: #2563eb; ring: 2px solid #93c5fd; }
+        .toggle-btn { position: absolute; right: 12px; top: 50%; transform: translateY(-50%); background: none; border: none; font-size: 18px; cursor: pointer; color: #6b7280; padding: 4px; }
+        .btn-submit { width: 100%; padding: 14px; background: #0070f3; color: white; border: none; border-radius: 10px; font-size: 16px; font-weight: 700; cursor: pointer; margin-top: 6px; }
+        .btn-submit:hover { background: #0051bb; }
+        .link-toggle { margin-top: 16px; font-size: 14px; color: #4b5563; text-decoration: underline; cursor: pointer; display: inline-block; }
     </style>
 </head>
 <body>
 
 <div class="card">
-    <h2>🏠 우리 가족 공간</h2>
+    <h2>🏠 우리 가족 홈</h2>
 
     {% with messages = get_flashed_messages() %}
       {% if messages %}
@@ -33,54 +32,62 @@
       {% endif %}
     {% endwith %}
 
-    <div class="tabs">
-        <div class="tab" id="loginTab" onclick="showForm('login')">로그인</div>
-        <div class="tab active" id="registerTab" onclick="showForm('register')">회원가입</div>
-    </div>
-
     <!-- 로그인 폼 -->
-    <form id="loginForm" action="/login" method="POST" style="display: none;">
-        <div class="input-group">
-            <label>닉네임</label>
-            <input type="text" name="username" required autocomplete="username">
+    <form id="loginForm" action="/login" method="POST">
+        <div class="input-box">
+            <input type="text" name="username" placeholder="이름 / 닉네임" required autocomplete="username">
         </div>
-        <div class="input-group">
-            <label>비밀번호</label>
-            <input type="password" name="password" required autocomplete="current-password">
+        <div class="input-box">
+            <input type="password" id="loginPw" name="password" placeholder="비밀번호" required autocomplete="current-password">
+            <button type="button" class="toggle-btn" onclick="togglePassword('loginPw', this)" title="비밀번호 표시/숨기기">👁️</button>
         </div>
-        <button type="submit">로그인하기</button>
+        <button type="submit" class="btn-submit">로그인</button>
+        <div>
+            <span class="link-toggle" onclick="toggleView('register')">처음이신가요? 가족 등록하기</span>
+        </div>
     </form>
 
     <!-- 회원가입 폼 -->
-    <form id="registerForm" action="/register" method="POST">
-        <div class="input-group">
-            <label>가족 초대코드</label>
-            <input type="text" name="invite_code" placeholder="우리집1234" required>
+    <form id="registerForm" action="/register" method="POST" style="display: none;">
+        <div class="input-box">
+            <input type="text" name="username" placeholder="이름 / 닉네임" required autocomplete="username">
         </div>
-        <div class="input-group">
-            <label>닉네임</label>
-            <input type="text" name="username" placeholder="이원희" required autocomplete="username">
+        <div class="input-box">
+            <input type="password" id="registerPw" name="password" placeholder="비밀번호" required autocomplete="new-password">
+            <button type="button" class="toggle-btn" onclick="togglePassword('registerPw', this)" title="비밀번호 표시/숨기기">👁️</button>
         </div>
-        <div class="input-group">
-            <label>비밀번호</label>
-            <input type="password" name="password" required autocomplete="new-password">
+        <div class="input-box">
+            <input type="password" id="inviteCode" name="invite_code" placeholder="가족 초대코드" required>
+            <button type="button" class="toggle-btn" onclick="togglePassword('inviteCode', this)" title="초대코드 표시/숨기기">👁️</button>
         </div>
-        <button type="submit">가족으로 등록하기</button>
+        <button type="submit" class="btn-submit" style="background: #10b981;">가족으로 등록하기</button>
+        <div>
+            <span class="link-toggle" onclick="toggleView('login')">이미 계정이 있으신가요? 로그인</span>
+        </div>
     </form>
 </div>
 
 <script>
-    function showForm(type) {
-        if (type === 'login') {
-            document.getElementById('loginForm').style.display = 'block';
-            document.getElementById('registerForm').style.display = 'none';
-            document.getElementById('loginTab').classList.add('active');
-            document.getElementById('registerTab').classList.remove('active');
-        } else {
+    // 로그인 / 회원가입 화면 전환
+    function toggleView(mode) {
+        if (mode === 'register') {
             document.getElementById('loginForm').style.display = 'none';
             document.getElementById('registerForm').style.display = 'block';
-            document.getElementById('loginTab').classList.remove('active');
-            document.getElementById('registerTab').classList.add('active');
+        } else {
+            document.getElementById('loginForm').style.display = 'block';
+            document.getElementById('registerForm').style.display = 'none';
+        }
+    }
+
+    // 비밀번호 보이기 / 숨기기 토글 기능
+    function togglePassword(inputId, btn) {
+        const input = document.getElementById(inputId);
+        if (input.type === 'password') {
+            input.type = 'text';
+            btn.textContent = '🔒';
+        } else {
+            input.type = 'password';
+            btn.textContent = '👁️';
         }
     }
 </script>
