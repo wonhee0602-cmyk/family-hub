@@ -15,13 +15,12 @@
         
         header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; padding-bottom: 12px; border-bottom: 2px solid #e2e8f0; position: relative; }
         
-        /* 우리 가족 홈 클릭 가능 헤더 버튼 */
         .brand-title { font-size: 20px; font-weight: 800; color: #0f172a; cursor: pointer; display: flex; align-items: center; gap: 6px; padding: 4px 8px; border-radius: 8px; transition: background 0.2s; user-select: none; }
         .brand-title:hover { background: #e2e8f0; }
 
-        .nav-right { display: flex; align-items: center; gap: 12px; }
+        .nav-right { display: flex; align-items: center; gap: 10px; }
         
-        .mail-btn { position: relative; background: none; border: none; font-size: 24px; cursor: pointer; padding: 4px; display: flex; align-items: center; }
+        .icon-btn { position: relative; background: none; border: none; font-size: 24px; cursor: pointer; padding: 4px; display: flex; align-items: center; }
         .mail-badge { position: absolute; top: 0; right: -4px; background: #ef4444; color: white; border-radius: 50%; font-size: 11px; font-weight: bold; width: 18px; height: 18px; display: flex; align-items: center; justify-content: center; }
 
         .user-dropdown-container { position: relative; }
@@ -60,28 +59,43 @@
         .mail-sender { font-weight: bold; color: #b45309; }
         .step-label { font-size: 13px; font-weight: bold; color: #64748b; margin-top: 10px; margin-bottom: 4px; }
 
-        /* 가족 멤버 목록 카드 */
         .family-member-card { display: flex; justify-content: space-between; align-items: center; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; padding: 12px 14px; margin-bottom: 8px; }
         .member-name { font-weight: 700; font-size: 15px; color: #0f172a; display: flex; align-items: center; gap: 6px; }
         .member-bday { font-size: 13px; color: #64748b; background: #e2e8f0; padding: 3px 8px; border-radius: 12px; }
+
+        /* 실시간 채팅방 모달 전용 스타일 */
+        .chat-container { display: flex; flex-direction: column; height: 380px; }
+        .chat-messages { flex: 1; overflow-y: auto; padding: 12px; background: #f1f5f9; border-radius: 10px; display: flex; flex-direction: column; gap: 8px; }
+        .chat-bubble { max-width: 75%; padding: 8px 12px; border-radius: 12px; font-size: 14px; line-height: 1.4; word-break: break-word; }
+        .chat-bubble.mine { align-self: flex-end; background: #2563eb; color: white; border-bottom-right-radius: 2px; }
+        .chat-bubble.others { align-self: flex-start; background: white; color: #1e293b; border: 1px solid #e2e8f0; border-bottom-left-radius: 2px; }
+        .chat-sender-name { font-size: 11px; font-weight: bold; color: #64748b; margin-bottom: 2px; }
+        .chat-time { font-size: 10px; opacity: 0.7; margin-top: 2px; text-align: right; }
+        .chat-input-bar { display: flex; gap: 6px; margin-top: 10px; }
+        .chat-input-bar input { flex: 1; padding: 10px 12px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 14px; outline: none; }
+        .chat-input-bar button { background: #2563eb; color: white; border: none; padding: 0 16px; border-radius: 8px; font-weight: bold; cursor: pointer; font-size: 14px; }
     </style>
 </head>
 <body>
 
 <header>
-    <!-- 누르면 가족 명단이 뜨는 타이틀 -->
     <div class="brand-title" onclick="openModal('familyModal')" title="가족 명단 보기">
         🏠 우리 가족 홈 ▾
     </div>
 
     <div class="nav-right">
-        <button class="mail-btn" onclick="openModal('mailModal')" title="칭찬 우편함">
-            💌
-            {% if my_praises|length > 0 %}
-            <span class="mail-badge">{{ my_praises|length }}</span>
-            {% endif %}
+        <!-- 💬 실시간 채팅방 버튼 -->
+        <button class="icon-btn" onclick="openModal('chatModal')" title="가족 실시간 채팅방">
+            💬
         </button>
 
+        <!-- 💌 칭찬 우편함 버튼 -->
+        <button class="icon-btn" onclick="openModal('mailModal')" title="칭찬 우편함">
+            💌
+            <span class="mail-badge" id="mailBadge" style="display: none;">0</span>
+        </button>
+
+        <!-- 👤 프로필 드롭다운 -->
         <div class="user-dropdown-container">
             <button class="user-btn" onclick="toggleDropdown(event)">
                 👤 {{ user.username }} ▾
@@ -96,12 +110,12 @@
     </div>
 </header>
 
-<!-- 1. 가족 공지사항 -->
+<!-- 1. 가족 공지사항 (실시간 자동 갱신) -->
 <section class="card">
     <h2>📢 가족 공지사항</h2>
     <form action="/add_notice" method="POST">
         <textarea name="content" placeholder="가족에게 알릴 내용을 입력하세요..." required></textarea>
-        <button type="submit" class="action-btn">공지 등록 (가족 전체 공유 & 알람)</button>
+        <button type="submit" class="action-btn">공지 등록 (실시간 전체 공유)</button>
     </form>
     <ul class="item-list" id="noticeList">
         {% for notice in notices %}
@@ -150,89 +164,28 @@
     </ul>
 </section>
 
-<!-- [새 모달] 우리 가족 명단 모달 -->
-<div class="modal-overlay" id="familyModal" onclick="closeModal(event, 'familyModal')">
+<!-- [모달 1] 💬 실시간 가족 채팅방 모달 -->
+<div class="modal-overlay" id="chatModal" onclick="closeModal(event, 'chatModal')">
     <div class="modal-box" onclick="event.stopPropagation()">
         <div class="modal-header">
-            <h3>👨‍👩‍👧‍👦 우리 가족 구성원 ({{ all_users|length }}명)</h3>
-            <button class="close-btn" onclick="closeModalDirect('familyModal')">✕</button>
+            <h3>💬 가족 실시간 채팅</h3>
+            <button class="close-btn" onclick="closeModalDirect('chatModal')">✕</button>
         </div>
-        <div class="modal-content">
-            <p style="font-size: 13px; color: #64748b; margin-bottom: 14px;">현재 가입되어 있는 모든 가족 닉네임입니다:</p>
-            <div>
-                {% for u in all_users %}
-                <div class="family-member-card">
-                    <span class="member-name">
-                        👤 {{ u.username }}
-                        {% if u.username == user.username %}
-                        <span style="font-size: 11px; color: #2563eb; background: #dbeafe; padding: 2px 6px; border-radius: 8px;">나</span>
-                        {% endif %}
-                    </span>
-                    <span class="member-bday">
-                        🎂 {{ u.birthday if u.birthday else '생일 미등록' }}
-                    </span>
+        <div class="modal-content" style="padding: 12px;">
+            <div class="chat-container">
+                <div class="chat-messages" id="chatBox">
+                    <!-- 실시간 채팅 메시지 자동 주입 -->
                 </div>
-                {% else %}
-                <p class="empty-text">가입된 가족이 없습니다.</p>
-                {% endfor %}
+                <div class="chat-input-bar">
+                    <input type="text" id="chatInput" placeholder="메시지를 입력하세요..." onkeydown="if(event.key==='Enter') sendChatMessage()">
+                    <button type="button" onclick="sendChatMessage()">전송</button>
+                </div>
             </div>
         </div>
     </div>
 </div>
 
-<!-- 생년월일 정하기 모달 -->
-<div class="modal-overlay" id="birthModal" onclick="closeModal(event, 'birthModal')">
-    <div class="modal-box" onclick="event.stopPropagation()">
-        <div class="modal-header">
-            <h3>🎂 생년월일 정하기</h3>
-            <button class="close-btn" onclick="closeModalDirect('birthModal')">✕</button>
-        </div>
-        <div class="modal-content">
-            <p style="font-size: 14px; color: #64748b; margin-bottom: 12px;">
-                현재 등록된 생일: <strong>{{ user.birthday if user.birthday else '미등록' }}</strong>
-            </p>
-            <form action="/set_birthday" method="POST">
-                <div class="step-label">1단계: 출생 연도 선택</div>
-                <select name="year" id="yearSelect" onchange="onYearChange()" required>
-                    <option value="" disabled selected>연도를 선택하세요</option>
-                </select>
-
-                <div class="step-label">2단계: 월 선택</div>
-                <select name="month" id="monthSelect" onchange="onMonthChange()" disabled required>
-                    <option value="" disabled selected>월을 선택하세요</option>
-                </select>
-
-                <div class="step-label">3단계: 일 선택</div>
-                <select name="day" id="daySelect" disabled required>
-                    <option value="" disabled selected>일을 선택하세요</option>
-                </select>
-
-                <button type="submit" class="action-btn" style="margin-top: 14px; background: #10b981;">생년월일 저장</button>
-            </form>
-        </div>
-    </div>
-</div>
-
-<!-- 설정 모달 -->
-<div class="modal-overlay" id="settingModal" onclick="closeModal(event, 'settingModal')">
-    <div class="modal-box" onclick="event.stopPropagation()">
-        <div class="modal-header">
-            <h3>⚙️ 설정</h3>
-            <button class="close-btn" onclick="closeModalDirect('settingModal')">✕</button>
-        </div>
-        <div class="modal-content" style="font-size: 14px; line-height: 1.6;">
-            <p><strong>가족 공간 정보</strong></p>
-            <p style="color: #64748b; margin-top: 4px;">가족 초대 코드: <strong>서희스타일스</strong></p>
-            <p style="color: #64748b;">내 계정 닉네임: <strong>{{ user.username }}</strong></p>
-            <hr style="margin: 14px 0; border: none; border-top: 1px solid #e2e8f0;">
-            <p style="color: #0f172a; font-weight: 600;">알림 및 자동 업데이트</p>
-            <p style="color: #64748b; font-size: 13px; margin-top: 4px;">코드 배포 시에도 가입 계정과 데이터는 영구 보존되며, 설치된 앱은 자동으로 최신 버전으로 갱신됩니다.</p>
-            <button type="button" class="action-btn" onclick="requestNoticePermission()" style="margin-top: 10px; padding: 8px;">🔔 알림 권한 허용하기</button>
-        </div>
-    </div>
-</div>
-
-<!-- 칭찬 우편함 모달 -->
+<!-- [모달 2] 💌 칭찬 우편함 모달 (실시간 갱신) -->
 <div class="modal-overlay" id="mailModal" onclick="closeModal(event, 'mailModal')">
     <div class="modal-box" onclick="event.stopPropagation()">
         <div class="modal-header">
@@ -254,23 +207,90 @@
                 <button type="submit" class="action-btn" style="background: #10b981;">편지 보내기</button>
             </form>
             <hr style="border: none; border-top: 1px dashed #cbd5e1; margin: 16px 0;">
-            <div style="font-weight: bold; margin-bottom: 8px;">내가 받은 칭찬 ({{ my_praises|length }})</div>
-            <div class="item-list">
-                {% for praise in my_praises %}
-                <div class="mail-item">
-                    <span class="mail-sender">From. {{ praise.sender }}</span>
-                    <div style="margin-top: 4px;">{{ praise.content }}</div>
-                    <span class="item-meta">{{ praise.created_at.strftime('%Y-%m-%d %H:%M') }}</span>
+            <div style="font-weight: bold; margin-bottom: 8px;" id="praiseTitle">내가 받은 칭찬 (0)</div>
+            <div class="item-list" id="praiseList">
+                <!-- 실시간 주입 -->
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- [모달 3] 가족 명단 모달 -->
+<div class="modal-overlay" id="familyModal" onclick="closeModal(event, 'familyModal')">
+    <div class="modal-box" onclick="event.stopPropagation()">
+        <div class="modal-header">
+            <h3>👨‍👩‍👧‍👦 우리 가족 구성원 ({{ all_users|length }}명)</h3>
+            <button class="close-btn" onclick="closeModalDirect('familyModal')">✕</button>
+        </div>
+        <div class="modal-content">
+            <p style="font-size: 13px; color: #64748b; margin-bottom: 14px;">현재 가입된 가족 명단입니다:</p>
+            <div>
+                {% for u in all_users %}
+                <div class="family-member-card">
+                    <span class="member-name">
+                        👤 {{ u.username }}
+                        {% if u.username == user.username %}
+                        <span style="font-size: 11px; color: #2563eb; background: #dbeafe; padding: 2px 6px; border-radius: 8px;">나</span>
+                        {% endif %}
+                    </span>
+                    <span class="member-bday">🎂 {{ u.birthday if u.birthday else '생일 미등록' }}</span>
                 </div>
-                {% else %}
-                <div class="empty-text">아직 도착한 칭찬 편지가 없습니다.</div>
                 {% endfor %}
             </div>
         </div>
     </div>
 </div>
 
+<!-- [모달 4] 생년월일 정하기 모달 -->
+<div class="modal-overlay" id="birthModal" onclick="closeModal(event, 'birthModal')">
+    <div class="modal-box" onclick="event.stopPropagation()">
+        <div class="modal-header">
+            <h3>🎂 생년월일 정하기</h3>
+            <button class="close-btn" onclick="closeModalDirect('birthModal')">✕</button>
+        </div>
+        <div class="modal-content">
+            <p style="font-size: 14px; color: #64748b; margin-bottom: 12px;">현재 등록된 생일: <strong>{{ user.birthday if user.birthday else '미등록' }}</strong></p>
+            <form action="/set_birthday" method="POST">
+                <div class="step-label">1단계: 출생 연도 선택</div>
+                <select name="year" id="yearSelect" onchange="onYearChange()" required>
+                    <option value="" disabled selected>연도를 선택하세요</option>
+                </select>
+                <div class="step-label">2단계: 월 선택</div>
+                <select name="month" id="monthSelect" onchange="onMonthChange()" disabled required>
+                    <option value="" disabled selected>월을 선택하세요</option>
+                </select>
+                <div class="step-label">3단계: 일 선택</div>
+                <select name="day" id="daySelect" disabled required>
+                    <option value="" disabled selected>일을 선택하세요</option>
+                </select>
+                <button type="submit" class="action-btn" style="margin-top: 14px; background: #10b981;">생년월일 저장</button>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- [모달 5] 설정 모달 -->
+<div class="modal-overlay" id="settingModal" onclick="closeModal(event, 'settingModal')">
+    <div class="modal-box" onclick="event.stopPropagation()">
+        <div class="modal-header">
+            <h3>⚙️ 설정</h3>
+            <button class="close-btn" onclick="closeModalDirect('settingModal')">✕</button>
+        </div>
+        <div class="modal-content" style="font-size: 14px; line-height: 1.6;">
+            <p><strong>가족 공간 정보</strong></p>
+            <p style="color: #64748b; margin-top: 4px;">가족 초대 코드: <strong>서희스타일스</strong></p>
+            <p style="color: #64748b;">내 계정 닉네임: <strong>{{ user.username }}</strong></p>
+            <hr style="margin: 14px 0; border: none; border-top: 1px solid #e2e8f0;">
+            <p style="color: #0f172a; font-weight: 600;">실시간 동기화</p>
+            <p style="color: #64748b; font-size: 13px; margin-top: 4px;">채팅, 공지사항, 칭찬 우편함이 새로고침 없이 실시간으로 동기화됩니다.</p>
+            <button type="button" class="action-btn" onclick="requestNoticePermission()" style="margin-top: 10px; padding: 8px;">🔔 알림 권한 허용</button>
+        </div>
+    </div>
+</div>
+
 <script>
+    const CURRENT_USER = "{{ user.username }}";
+
     function toggleDropdown(e) {
         e.stopPropagation();
         document.getElementById('userMenu').classList.toggle('active');
@@ -282,6 +302,10 @@
     function openModal(id) {
         document.getElementById('userMenu').classList.remove('active');
         document.getElementById(id).classList.add('active');
+        if (id === 'chatModal') {
+            scrollChatToBottom();
+            document.getElementById('chatInput').focus();
+        }
     }
     function closeModalDirect(id) {
         document.getElementById(id).classList.remove('active');
@@ -292,7 +316,7 @@
         }
     }
 
-    // 생년월일
+    // 생년월일 로직
     const yearSelect = document.getElementById('yearSelect');
     const monthSelect = document.getElementById('monthSelect');
     const daySelect = document.getElementById('daySelect');
@@ -334,88 +358,141 @@
         daySelect.disabled = false;
     }
 
-    // --- PWA 설치 및 즉시 자동 업데이트 강제 로직 ---
+    // --- PWA 설치 및 자동 갱신 ---
     let deferredPrompt = null;
     if ('serviceWorker' in navigator) {
-        navigator.serviceWorker.register("{{ url_for('static', filename='sw.js') }}")
-            .then(reg => {
-                // 접속 시마다 서비스 워커 업데이트 강제 체크
-                reg.update();
-                reg.onupdatefound = () => {
-                    const installingWorker = reg.installing;
-                    installingWorker.onstatechange = () => {
-                        if (installingWorker.state === 'installed' && navigator.serviceWorker.controller) {
-                            // 최신 배포 감지 시 자동으로 페이지를 최신 상태로 새로고침
-                            window.location.reload();
-                        }
-                    };
-                };
-            });
+        navigator.serviceWorker.register("{{ url_for('static', filename='sw.js') }}").then(reg => reg.update());
     }
-
     window.addEventListener('beforeinstallprompt', (e) => {
         e.preventDefault();
         deferredPrompt = e;
     });
-
     function installAppDirect() {
         document.getElementById('userMenu').classList.remove('active');
         if (deferredPrompt) {
             deferredPrompt.prompt();
             deferredPrompt.userChoice.then(() => { deferredPrompt = null; });
         } else {
-            alert('이미 설치되어 있거나 브라우저 메뉴(공유 -> 홈 화면에 추가)에서 바로 설치하실 수 있습니다.');
+            alert('이미 설치되어 있거나 브라우저 메뉴에서 바로 설치하실 수 있습니다.');
         }
     }
 
-    // 알림 권한
     function requestNoticePermission() {
         if ('Notification' in window) {
-            Notification.requestPermission().then(permission => {
-                if (permission === 'granted') {
-                    alert('알림 권한이 허용되었습니다.');
-                }
+            Notification.requestPermission().then(p => {
+                if (p === 'granted') alert('알림이 허용되었습니다.');
             });
         }
     }
-    if ('Notification' in window && Notification.permission === 'default') {
-        Notification.requestPermission();
+
+    // --- 🚀 실시간 채팅 및 공지/우편함 백그라운드 동기화 엔진 ---
+    let lastChatId = 0;
+    let lastNoticeId = 0;
+    let lastPraiseCount = -1;
+
+    function scrollChatToBottom() {
+        const box = document.getElementById('chatBox');
+        box.scrollTop = box.scrollHeight;
     }
 
-    // 공지 실시간 알람
-    const firstNotice = document.querySelector('#noticeList .item');
-    let lastNoticeId = firstNotice ? firstNotice.getAttribute('data-id') : '0';
-    const currentUser = "{{ user.username }}";
+    function sendChatMessage() {
+        const input = document.getElementById('chatInput');
+        const text = input.value.trim();
+        if (!text) return;
 
-    setInterval(() => {
-        fetch('/')
-            .then(res => res.text())
-            .then(html => {
-                const parser = new DOMParser();
-                const doc = parser.parseFromString(html, 'text/html');
-                const newFirstNotice = doc.querySelector('#noticeList .item');
-                
-                if (newFirstNotice) {
-                    const newId = newFirstNotice.getAttribute('data-id');
-                    if (newId && newId !== lastNoticeId) {
-                        lastNoticeId = newId;
-                        const author = newFirstNotice.querySelector('strong').innerText.replace(':', '');
-                        const fullText = newFirstNotice.innerText;
-                        
-                        if (author.trim() !== currentUser) {
+        input.value = '';
+        fetch('/api/chat/send', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ message: text })
+        }).then(() => {
+            syncLiveData(); // 전송 즉시 동기화
+        });
+    }
+
+    function syncLiveData() {
+        fetch('/api/live_sync')
+            .then(res => res.json())
+            .then(data => {
+                // 1. 실시간 채팅 갱신
+                const chatBox = document.getElementById('chatBox');
+                if (data.chats && data.chats.length > 0) {
+                    const latestMsg = data.chats[data.chats.length - 1];
+                    if (latestMsg.id !== lastChatId) {
+                        lastChatId = latestMsg.id;
+                        chatBox.innerHTML = data.chats.map(c => `
+                            <div class="chat-bubble ${c.is_me ? 'mine' : 'others'}">
+                                ${!c.is_me ? `<div class="chat-sender-name">${c.sender}</div>` : ''}
+                                <div>${c.message}</div>
+                                <div class="chat-time">${c.time}</div>
+                            </div>
+                        `).join('');
+                        scrollChatToBottom();
+                    }
+                } else {
+                    chatBox.innerHTML = '<div class="empty-text">아직 대화가 없습니다. 첫 메시지를 보내보세요!</div>';
+                }
+
+                // 2. 실시간 공지사항 갱신
+                const noticeList = document.getElementById('noticeList');
+                if (data.notices && data.notices.length > 0) {
+                    const topNotice = data.notices[0];
+                    if (topNotice.id !== lastNoticeId) {
+                        if (lastNoticeId !== 0 && topNotice.author !== CURRENT_USER) {
                             if ('Notification' in window && Notification.permission === 'granted') {
                                 new Notification('📢 새 가족 공지사항!', {
-                                    body: fullText,
+                                    body: `${topNotice.author}: ${topNotice.content}`,
                                     icon: 'https://cdn-icons-png.flaticon.com/512/619/619153.png'
                                 });
                             }
                         }
-                        document.getElementById('noticeList').innerHTML = doc.getElementById('noticeList').innerHTML;
+                        lastNoticeId = topNotice.id;
+                        noticeList.innerHTML = data.notices.map(n => `
+                            <li class="item" data-id="${n.id}">
+                                <strong>${n.author}:</strong> ${n.content}
+                                <span class="item-meta">${n.time}</span>
+                            </li>
+                        `).join('');
+                    }
+                }
+
+                // 3. 실시간 칭찬 우편함 갱신
+                if (data.praises) {
+                    const count = data.praises.length;
+                    if (count !== lastPraiseCount) {
+                        lastPraiseCount = count;
+                        
+                        // 뱃지 숫자 갱신
+                        const badge = document.getElementById('mailBadge');
+                        if (count > 0) {
+                            badge.textContent = count;
+                            badge.style.display = 'flex';
+                        } else {
+                            badge.style.display = 'none';
+                        }
+
+                        document.getElementById('praiseTitle').textContent = `내가 받은 칭찬 (${count})`;
+                        const praiseList = document.getElementById('praiseList');
+                        if (count > 0) {
+                            praiseList.innerHTML = data.praises.map(p => `
+                                <div class="mail-item">
+                                    <span class="mail-sender">From. ${p.sender}</span>
+                                    <div style="margin-top: 4px;">${p.content}</div>
+                                    <span class="item-meta">${p.time}</span>
+                                </div>
+                            `).join('');
+                        } else {
+                            praiseList.innerHTML = '<div class="empty-text">아직 도착한 칭찬 편지가 없습니다.</div>';
+                        }
                     }
                 }
             })
             .catch(() => {});
-    }, 10000);
+    }
+
+    // 접속 즉시 동기화 실행 후 1.5초마다 백그라운드 실시간 갱신
+    syncLiveData();
+    setInterval(syncLiveData, 1500);
 </script>
 
 </body>
