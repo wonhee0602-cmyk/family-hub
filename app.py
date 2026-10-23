@@ -6,10 +6,8 @@ from flask_login import LoginManager, UserMixin, login_user, login_required, log
 from werkzeug.security import generate_password_hash, check_password_hash
 
 app = Flask(__name__)
-# 세션 복호화 키 고정
 app.config['SECRET_KEY'] = 'family-hub-forever-secure-token-permanent'
 
-# 100년(36,500일) 동안 로그인 상태 유지
 PERMANENT_DAYS = 365 * 100
 app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(days=PERMANENT_DAYS)
 app.config['REMEMBER_COOKIE_DURATION'] = timedelta(days=PERMANENT_DAYS)
@@ -18,7 +16,6 @@ app.config['SESSION_COOKIE_SECURE'] = True
 app.config['SESSION_COOKIE_HTTPONLY'] = True
 app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
 
-# DB 파일 절대 경로
 basedir = os.path.abspath(os.path.dirname(__file__))
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///' + os.path.join(basedir, 'family_main.db')
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
@@ -32,6 +29,7 @@ class User(UserMixin, db.Model):
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(50), unique=True, nullable=False)
     password = db.Column(db.String(200), nullable=False)
+    birthday = db.Column(db.String(20), default='')
 
 class Praise(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -67,7 +65,6 @@ def load_user(user_id):
 with app.app_context():
     db.create_all()
 
-# 모든 요청마다 세션을 영구 세션으로 강제 유지
 @app.before_request
 def make_session_permanent():
     session.permanent = True
@@ -100,7 +97,6 @@ def login():
         password = request.form.get('password')
         user = User.query.filter_by(username=username).first()
         if user and check_password_hash(user.password, password):
-            # 로그인 기억 기간 100년 적용
             login_user(user, remember=True, duration=timedelta(days=PERMANENT_DAYS))
             return redirect(url_for('index'))
         flash('아이디 또는 비밀번호가 일치하지 않습니다.')
@@ -128,10 +124,21 @@ def register():
         db.session.add(new_user)
         db.session.commit()
         
-        # 가입 즉시 100년 자동 로그인 적용
         login_user(new_user, remember=True, duration=timedelta(days=PERMANENT_DAYS))
         return redirect(url_for('index'))
     return render_template('login.html')
+
+# 생년월일 저장
+@app.route('/set_birthday', methods=['POST'])
+@login_required
+def set_birthday():
+    year = request.form.get('year')
+    month = request.form.get('month')
+    day = request.form.get('day')
+    if year and month and day:
+        current_user.birthday = f"{year}-{month.zfill(2)}-{day.zfill(2)}"
+        db.session.commit()
+    return redirect(url_for('index'))
 
 @app.route('/add_praise', methods=['POST'])
 @login_required
