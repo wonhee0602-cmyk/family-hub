@@ -1,94 +1,180 @@
 <!DOCTYPE html>
 <html lang="ko">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>우리 가족 홈</title>
-    <style>
-        * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
-        body { background: #f0f2f5; display: flex; align-items: center; justify-content: center; min-height: 100vh; padding: 20px; }
-        .card { background: white; padding: 32px 28px; border-radius: 16px; box-shadow: 0 4px 20px rgba(0,0,0,0.08); width: 100%; max-width: 360px; text-align: center; }
-        h2 { font-size: 22px; font-weight: 700; margin-bottom: 18px; color: #222; }
-        .flash { color: #e11d48; font-size: 14px; margin-bottom: 14px; font-weight: 500; }
-        .input-box { position: relative; margin-bottom: 12px; }
-        .input-box input { width: 100%; padding: 14px 44px 14px 14px; border: 1px solid #d1d5db; border-radius: 10px; font-size: 15px; outline: none; }
-        .input-box input:focus { border-color: #2563eb; }
-        .toggle-btn { position: absolute; right: 12px; top: 50%; transform: translateY(-50%); background: none; border: none; font-size: 18px; cursor: pointer; color: #6b7280; padding: 4px; }
-        .btn-submit { width: 100%; padding: 14px; background: #0070f3; color: white; border: none; border-radius: 10px; font-size: 16px; font-weight: 700; cursor: pointer; margin-top: 6px; }
-        .btn-submit:hover { background: #0051bb; }
-        .link-toggle { margin-top: 16px; font-size: 14px; color: #4b5563; text-decoration: underline; cursor: pointer; display: inline-block; }
-    </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>우리 가족 홈 - 로그인</title>
+  <link rel="manifest" href="/static/manifest.json">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background: linear-gradient(135deg, #f0f4f8, #d9e2ec);
+      font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, system-ui, Roboto, sans-serif;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+    .auth-card {
+      background: #ffffff;
+      width: 100%;
+      max-width: 420px;
+      padding: 35px 30px;
+      border-radius: 20px;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.08);
+      text-align: center;
+    }
+    .logo-icon {
+      font-size: 3rem;
+      margin-bottom: 12px;
+      display: inline-block;
+    }
+    h2 {
+      color: #102a43;
+      margin-bottom: 8px;
+      font-weight: 700;
+    }
+    p.sub {
+      color: #627d98;
+      font-size: 0.95rem;
+      margin-bottom: 25px;
+    }
+    .flash-msg {
+      background: #ffe3e3;
+      color: #c92a2a;
+      padding: 10px 14px;
+      border-radius: 8px;
+      margin-bottom: 15px;
+      font-size: 0.9rem;
+      font-weight: 500;
+    }
+    .form-group {
+      margin-bottom: 15px;
+      text-align: left;
+    }
+    .form-group label {
+      display: block;
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: #334e68;
+      margin-bottom: 6px;
+    }
+    .form-group input {
+      width: 100%;
+      padding: 12px 14px;
+      border: 1.5px solid #d9e2ec;
+      border-radius: 10px;
+      font-size: 1rem;
+      outline: none;
+      transition: border 0.2s;
+    }
+    .form-group input:focus {
+      border-color: #334e68;
+    }
+    .btn-submit {
+      width: 100%;
+      padding: 14px;
+      background: #243b53;
+      color: #ffffff;
+      border: none;
+      border-radius: 10px;
+      font-size: 1rem;
+      font-weight: 700;
+      cursor: pointer;
+      margin-top: 10px;
+      transition: background 0.2s;
+    }
+    .btn-submit:hover {
+      background: #102a43;
+    }
+    .toggle-link {
+      margin-top: 20px;
+      font-size: 0.9rem;
+      color: #486581;
+      cursor: pointer;
+      text-decoration: underline;
+    }
+    .hidden {
+      display: none;
+    }
+  </style>
 </head>
 <body>
 
-<div class="card">
-    <h2>🏠 우리 가족 홈</h2>
-
-    {% with messages = get_flashed_messages() %}
-      {% if messages %}
-        {% for message in messages %}
-          <div class="flash">{{ message }}</div>
-        {% endfor %}
-      {% endif %}
-    {% endwith %}
-
+  <div class="auth-card">
+    <div class="logo-icon">🏡</div>
+    
     <!-- 로그인 폼 -->
-    <form id="loginForm" action="/login" method="POST">
-        <div class="input-box">
-            <input type="text" name="username" placeholder="이름 / 닉네임" required autocomplete="username">
+    <div id="login-section">
+      <h2>우리 가족 홈</h2>
+      <p class="sub">가족 공간에 오신 것을 환영합니다</p>
+
+      {% with messages = get_flashed_messages() %}
+        {% if messages %}
+          {% for message in messages %}
+            <div class="flash-msg">{{ message }}</div>
+          {% endfor %}
+        {% endif %}
+      {% endwith %}
+
+      <form action="/login" method="POST">
+        <div class="form-group">
+          <label>아이디 (닉네임)</label>
+          <input type="text" name="username" placeholder="가족 닉네임 입력" required autofocus>
         </div>
-        <div class="input-box">
-            <input type="password" id="loginPw" name="password" placeholder="비밀번호" required autocomplete="current-password">
-            <button type="button" class="toggle-btn" onclick="togglePassword('loginPw', this)" title="비밀번호 표시/숨기기">👁️</button>
+        <div class="form-group">
+          <label>비밀번호</label>
+          <input type="password" name="password" placeholder="비밀번호 입력" required>
         </div>
         <button type="submit" class="btn-submit">로그인</button>
-        <div>
-            <span class="link-toggle" onclick="toggleView('register')">처음이신가요? 가족 등록하기</span>
-        </div>
-    </form>
+      </form>
+
+      <div class="toggle-link" onclick="toggleForm('register')">
+        처음이신가요? 가족 등록하기
+      </div>
+    </div>
 
     <!-- 회원가입 폼 -->
-    <form id="registerForm" action="/register" method="POST" style="display: none;">
-        <div class="input-box">
-            <input type="text" name="username" placeholder="이름 / 닉네임" required autocomplete="username">
-        </div>
-        <div class="input-box">
-            <input type="password" id="registerPw" name="password" placeholder="비밀번호" required autocomplete="new-password">
-            <button type="button" class="toggle-btn" onclick="togglePassword('registerPw', this)" title="비밀번호 표시/숨기기">👁️</button>
-        </div>
-        <div class="input-box">
-            <input type="password" id="inviteCode" name="invite_code" placeholder="가족 초대코드" required>
-            <button type="button" class="toggle-btn" onclick="togglePassword('inviteCode', this)" title="초대코드 표시/숨기기">👁️</button>
-        </div>
-        <button type="submit" class="btn-submit" style="background: #10b981;">가족으로 등록하기</button>
-        <div>
-            <span class="link-toggle" onclick="toggleView('login')">이미 계정이 있으신가요? 로그인</span>
-        </div>
-    </form>
-</div>
+    <div id="register-section" class="hidden">
+      <h2>가족 계정 등록</h2>
+      <p class="sub">가족 초대 코드를 입력해 주세요</p>
 
-<script>
-    function toggleView(mode) {
-        if (mode === 'register') {
-            document.getElementById('loginForm').style.display = 'none';
-            document.getElementById('registerForm').style.display = 'block';
-        } else {
-            document.getElementById('loginForm').style.display = 'block';
-            document.getElementById('registerForm').style.display = 'none';
-        }
+      <form action="/register" method="POST">
+        <div class="form-group">
+          <label>가족 초대 코드</label>
+          <input type="text" name="invite_code" placeholder="서희스타일스" required>
+        </div>
+        <div class="form-group">
+          <label>사용할 닉네임</label>
+          <input type="text" name="username" placeholder="예: 엄마, 아빠, 원희" required>
+        </div>
+        <div class="form-group">
+          <label>비밀번호</label>
+          <input type="password" name="password" placeholder="비밀번호 설정" required>
+        </div>
+        <button type="submit" class="btn-submit" style="background: #3b5998;">가족 등록 완료</button>
+      </form>
+
+      <div class="toggle-link" onclick="toggleForm('login')">
+        이미 계정이 있으신가요? 로그인하기
+      </div>
+    </div>
+  </div>
+
+  <script>
+    function toggleForm(type) {
+      const loginSec = document.getElementById('login-section');
+      const regSec = document.getElementById('register-section');
+      if (type === 'register') {
+        loginSec.classList.add('hidden');
+        regSec.classList.remove('hidden');
+      } else {
+        regSec.classList.add('hidden');
+        loginSec.classList.remove('hidden');
+      }
     }
-
-    function togglePassword(inputId, btn) {
-        const input = document.getElementById(inputId);
-        if (input.type === 'password') {
-            input.type = 'text';
-            btn.textContent = '🔒';
-        } else {
-            input.type = 'password';
-            btn.textContent = '👁️';
-        }
-    }
-</script>
-
+  </script>
 </body>
 </html>
