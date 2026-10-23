@@ -62,7 +62,6 @@ class Notice(db.Model):
     content = db.Column(db.Text, nullable=False)
     created_at = db.Column(db.DateTime, default=datetime.now)
 
-# 실시간 가족 채팅 모델
 class ChatMessage(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     sender = db.Column(db.String(50), nullable=False)
@@ -104,11 +103,9 @@ def index():
                            notices=notices,
                            chat_messages=chat_messages)
 
-# --- 실시간 동기화 API (새로고침 없이 갱신) ---
 @app.route('/api/live_sync', methods=['GET'])
 @login_required
 def live_sync():
-    # 1. 채팅 메시지 (최근 50개)
     chats = ChatMessage.query.order_by(ChatMessage.created_at.asc()).limit(50).all()
     chat_list = [{
         'id': c.id,
@@ -118,7 +115,6 @@ def live_sync():
         'is_me': (c.sender == current_user.username)
     } for c in chats]
 
-    # 2. 공지사항
     notices = Notice.query.order_by(Notice.created_at.desc()).all()
     notice_list = [{
         'id': n.id,
@@ -127,7 +123,6 @@ def live_sync():
         'time': n.created_at.strftime('%Y-%m-%d %H:%M')
     } for n in notices]
 
-    # 3. 내 우편함(칭찬)
     praises = Praise.query.filter_by(receiver=current_user.username).order_by(Praise.created_at.desc()).all()
     praise_list = [{
         'id': p.id,
@@ -142,7 +137,6 @@ def live_sync():
         'praises': praise_list
     })
 
-# 채팅 전송 API
 @app.route('/api/chat/send', methods=['POST'])
 @login_required
 def send_chat():
@@ -152,7 +146,7 @@ def send_chat():
         new_msg = ChatMessage(sender=current_user.username, message=message)
         db.session.add(new_msg)
         db.session.commit()
-        return jsonify({'status': 'ok', 'sender': current_user.username, 'message': message})
+        return jsonify({'status': 'ok'})
     return jsonify({'status': 'fail'}), 400
 
 @app.route('/login', methods=['GET', 'POST'])
@@ -160,8 +154,9 @@ def login():
     if current_user.is_authenticated:
         return redirect(url_for('index'))
     if request.method == 'POST':
-        username = request.form.get('username')
-        password = request.form.get('password')
+        username = (request.form.get('username') or '').strip()
+        password = (request.form.get('password') or '').strip()
+        
         user = User.query.filter_by(username=username).first()
         if user and check_password_hash(user.password, password):
             login_user(user, remember=True, duration=timedelta(days=PERMANENT_DAYS))
@@ -174,14 +169,18 @@ def register():
     if current_user.is_authenticated:
         return redirect(url_for('index'))
     if request.method == 'POST':
-        invite_code = request.form.get('invite_code')
+        invite_code = (request.form.get('invite_code') or '').strip()
         if invite_code != '서희스타일스':
             flash('가족 초대 코드가 올바르지 않습니다.')
             return redirect(url_for('login'))
             
-        username = request.form.get('username')
-        password = request.form.get('password')
+        username = (request.form.get('username') or '').strip()
+        password = (request.form.get('password') or '').strip()
         
+        if not username or not password:
+            flash('아이디와 비밀번호를 모두 입력해 주세요.')
+            return redirect(url_for('login'))
+            
         if User.query.filter_by(username=username).first():
             flash('이미 존재하는 아이디입니다.')
             return redirect(url_for('login'))
@@ -209,8 +208,8 @@ def set_birthday():
 @app.route('/add_praise', methods=['POST'])
 @login_required
 def add_praise():
-    receiver = request.form.get('receiver')
-    content = request.form.get('content')
+    receiver = (request.form.get('receiver') or '').strip()
+    content = (request.form.get('content') or '').strip()
     if receiver and content:
         new_praise = Praise(sender=current_user.username, receiver=receiver, content=content)
         db.session.add(new_praise)
@@ -220,7 +219,7 @@ def add_praise():
 @app.route('/add_diary', methods=['POST'])
 @login_required
 def add_diary():
-    content = request.form.get('content')
+    content = (request.form.get('content') or '').strip()
     if content:
         new_diary = Diary(user_id=current_user.id, content=content)
         db.session.add(new_diary)
@@ -230,7 +229,7 @@ def add_diary():
 @app.route('/add_todo', methods=['POST'])
 @login_required
 def add_todo():
-    content = request.form.get('content')
+    content = (request.form.get('content') or '').strip()
     if content:
         new_todo = Todo(user_id=current_user.id, content=content)
         db.session.add(new_todo)
@@ -240,7 +239,7 @@ def add_todo():
 @app.route('/add_notice', methods=['POST'])
 @login_required
 def add_notice():
-    content = request.form.get('content')
+    content = (request.form.get('content') or '').strip()
     if content:
         new_notice = Notice(author=current_user.username, content=content)
         db.session.add(new_notice)
