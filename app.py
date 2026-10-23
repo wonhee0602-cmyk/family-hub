@@ -1,14 +1,20 @@
 import os
-from datetime import datetime
-from flask import Flask, render_template, request, redirect, url_for, flash
+from datetime import datetime, timedelta
+from flask import Flask, render_template, request, redirect, url_for, flash, session
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager, UserMixin, login_user, login_required, logout_user, current_user
 from werkzeug.security import generate_password_hash, check_password_hash
 
 app = Flask(__name__)
-app.config['SECRET_KEY'] = 'family-hub-secret-2026'
+app.config['SECRET_KEY'] = 'family-hub-secret-2026-persistent'
 
-# SQLite 절대 경로 설정
+# 로그인 세션을 365일 동안 유지하도록 설정
+app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(days=365)
+app.config['SESSION_COOKIE_SECURE'] = True
+app.config['SESSION_COOKIE_HTTPONLY'] = True
+app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
+
+# DB 경로 고정
 basedir = os.path.abspath(os.path.dirname(__file__))
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///' + os.path.join(basedir, 'family_main.db')
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
@@ -17,7 +23,7 @@ db = SQLAlchemy(app)
 login_manager = LoginManager(app)
 login_manager.login_view = 'login'
 
-# --- DB 모델 ---
+# --- 데이터 모델 ---
 class User(UserMixin, db.Model):
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(50), unique=True, nullable=False)
@@ -47,7 +53,6 @@ class Notice(db.Model):
     content = db.Column(db.Text, nullable=False)
     created_at = db.Column(db.DateTime, default=datetime.now)
 
-# 구버전/신버전 모두 뻗지 않는 안전한 유저 로더
 @login_manager.user_loader
 def load_user(user_id):
     try:
@@ -55,9 +60,12 @@ def load_user(user_id):
     except Exception:
         return None
 
-# 시작 시 안전하게 테이블 생성
 with app.app_context():
     db.create_all()
+
+@app.before_request
+def make_session_permanent():
+    session.permanent = True
 
 # --- 라우트 ---
 @app.route('/')
@@ -86,7 +94,7 @@ def login():
         password = request.form.get('password')
         user = User.query.filter_by(username=username).first()
         if user and check_password_hash(user.password, password):
-            login_user(user)
+            login_user(user, remember=True, duration=timedelta(days=365))
             return redirect(url_for('index'))
         flash('아이디 또는 비밀번호가 일치하지 않습니다.')
     return render_template('login.html')
@@ -113,7 +121,7 @@ def register():
         db.session.add(new_user)
         db.session.commit()
         
-        login_user(new_user)
+        login_user(new_user, remember=True, duration=timedelta(days=365))
         return redirect(url_for('index'))
     return render_template('login.html')
 
