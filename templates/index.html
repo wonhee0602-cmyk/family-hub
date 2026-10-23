@@ -7,33 +7,24 @@
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
         body { background: #f8fafc; color: #1e293b; padding: 20px 16px; max-width: 600px; margin: 0 auto; }
-        
-        /* 상단 헤더 & 우편함 버튼 */
         header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; padding-bottom: 12px; border-bottom: 2px solid #e2e8f0; }
         h1 { font-size: 20px; font-weight: 700; color: #0f172a; }
         .nav-right { display: flex; align-items: center; gap: 14px; }
-        
         .mail-btn { position: relative; background: none; border: none; font-size: 24px; cursor: pointer; padding: 4px; display: flex; align-items: center; }
         .mail-badge { position: absolute; top: 0; right: -4px; background: #ef4444; color: white; border-radius: 50%; font-size: 11px; font-weight: bold; width: 18px; height: 18px; display: flex; align-items: center; justify-content: center; }
         .logout-btn { color: #64748b; text-decoration: none; font-size: 14px; font-weight: 600; }
         .logout-btn:hover { color: #ef4444; }
-
-        /* 카드 레이아웃 */
         .card { background: white; border-radius: 14px; padding: 18px; margin-bottom: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.04); border: 1px solid #e2e8f0; }
         .card h2 { font-size: 16px; margin-bottom: 12px; display: flex; align-items: center; gap: 6px; }
         form { display: flex; flex-direction: column; gap: 8px; margin-bottom: 14px; }
         input[type="text"], textarea, select { width: 100%; padding: 10px 12px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 14px; outline: none; }
-        input[type="text"]:focus, textarea:focus, select:focus { border-color: #2563eb; }
         textarea { resize: vertical; min-height: 60px; }
         button.action-btn { background: #2563eb; color: white; border: none; padding: 10px; border-radius: 8px; font-weight: 600; cursor: pointer; font-size: 14px; }
         button.action-btn:hover { background: #1d4ed8; }
-        
         .item-list { list-style: none; display: flex; flex-direction: column; gap: 8px; }
         .item { background: #f1f5f9; padding: 10px 12px; border-radius: 8px; font-size: 14px; line-height: 1.4; }
         .item-meta { font-size: 11px; color: #64748b; margin-top: 4px; display: block; }
         .empty-text { font-size: 13px; color: #94a3b8; text-align: center; padding: 8px 0; }
-
-        /* 우편함 팝업(모달) 스타일 */
         .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 100; justify-content: center; align-items: center; padding: 16px; }
         .modal-overlay.active { display: flex; }
         .modal-box { background: white; width: 100%; max-width: 480px; border-radius: 16px; max-height: 85vh; display: flex; flex-direction: column; overflow: hidden; box-shadow: 0 10px 25px rgba(0,0,0,0.2); }
@@ -51,7 +42,6 @@
 <header>
     <h1>🏠 {{ user.username }}님의 가족 홈</h1>
     <div class="nav-right">
-        <!-- 오른쪽 상단 우편 버튼 -->
         <button class="mail-btn" onclick="openMailModal()" title="칭찬 우편함">
             💌
             {% if my_praises|length > 0 %}
@@ -81,7 +71,7 @@
     </ul>
 </section>
 
-<!-- 2. 내 할 일 (나만 봄) -->
+<!-- 2. 내 할 일 -->
 <section class="card">
     <h2>✅ 내 할 일</h2>
     <form action="/add_todo" method="POST" style="flex-direction: row;">
@@ -97,7 +87,7 @@
     </ul>
 </section>
 
-<!-- 3. 나만의 비밀 일기 (나만 봄) -->
+<!-- 3. 나만의 비밀 일기 -->
 <section class="card">
     <h2>📖 나만의 비밀 일기</h2>
     <form action="/add_diary" method="POST">
@@ -124,7 +114,6 @@
             <button class="close-btn" onclick="closeMailModal()">✕</button>
         </div>
         <div class="modal-content">
-            <!-- 칭찬 보내기 폼 -->
             <div class="mail-section-title">칭찬 편지 쓰기</div>
             <form action="/add_praise" method="POST">
                 <select name="receiver" required>
@@ -139,7 +128,6 @@
 
             <hr style="border: none; border-top: 1px dashed #cbd5e1; margin: 16px 0;">
 
-            <!-- 나에게 도착한 칭찬 목록 -->
             <div class="mail-section-title">내가 받은 칭찬 ({{ my_praises|length }})</div>
             <div class="item-list">
                 {% for praise in my_praises %}
@@ -164,6 +152,15 @@
         if (!e || e.target.id === 'mailModal' || e.target.classList.contains('close-btn')) {
             document.getElementById('mailModal').classList.remove('active');
         }
+    }
+
+    // PWA 자동 캐시 갱신 및 앱 자동 업데이트 보장
+    if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.getRegistrations().then(function(registrations) {
+            for (let registration of registrations) {
+                registration.update();
+            }
+        });
     }
 </script>
 
