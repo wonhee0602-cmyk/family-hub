@@ -14,7 +14,7 @@
     /* 헤더 및 드롭다운 */
     header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; padding-bottom: 12px; border-bottom: 2px solid #e2e8f0; position: relative; }
     .brand-title { font-size: 22px; font-weight: 800; color: #0f172a; display: flex; align-items: center; gap: 8px; cursor: pointer; user-select: none; }
-    .brand-title:hover { opacity: 0.8; }
+    .brand-title:hover { opacity: 0.85; }
     .brand-hint { font-size: 11px; color: #2563eb; font-weight: normal; margin-left: 4px; }
     
     .family-modal { display: none; position: absolute; top: 48px; left: 0; background: white; border: 1px solid #cbd5e1; border-radius: 12px; padding: 15px; width: 260px; box-shadow: 0 10px 25px rgba(0,0,0,0.15); z-index: 100; }
@@ -42,22 +42,22 @@
     .item-meta { font-size: 11px; color: #64748b; margin-top: 4px; }
     .empty-text { font-size: 13px; color: #94a3b8; text-align: center; padding: 10px 0; }
 
-    /* 실시간 채팅 박스 */
+    /* 실시간 채팅 */
     .chat-container { display: flex; flex-direction: column; height: 320px; }
     .chat-messages { flex: 1; overflow-y: auto; padding: 10px; background: #f8fafc; border-radius: 10px; display: flex; flex-direction: column; gap: 8px; margin-bottom: 10px; }
-    .chat-bubble { max-width: 80%; padding: 8px 12px; border-radius: 12px; font-size: 14px; line-height: 1.4; }
+    .chat-bubble { max-width: 80%; padding: 8px 12px; border-radius: 12px; font-size: 14px; line-height: 1.4; word-break: break-word; }
     .chat-bubble.mine { align-self: flex-end; background: #2563eb; color: white; border-bottom-right-radius: 2px; }
     .chat-bubble.other { align-self: flex-start; background: #e2e8f0; color: #1e293b; border-bottom-left-radius: 2px; }
     .chat-meta { font-size: 10px; opacity: 0.7; margin-top: 2px; }
     .chat-input-row { display: flex; gap: 8px; }
     .chat-input-row input { flex: 1; }
 
-    /* 대화용 AI 비서 섹션 */
-    .ai-card { background: linear-gradient(145deg, #ffffff, #eff6ff); border: 1.5px solid #bfdbfe; }
-    .ai-bubble-box { height: 180px; overflow-y: auto; background: white; border-radius: 10px; padding: 12px; border: 1px solid #dbeafe; display: flex; flex-direction: column; gap: 8px; margin-bottom: 10px; }
-    .ai-msg { padding: 8px 12px; border-radius: 10px; font-size: 13px; line-height: 1.4; max-width: 85%; }
-    .ai-msg.ai { background: #e0e7ff; color: #1e1b4b; align-self: flex-start; }
-    .ai-msg.user { background: #3b82f6; color: white; align-self: flex-end; }
+    /* 만능 AI 비서 카드 */
+    .ai-card { background: linear-gradient(145deg, #ffffff, #f0fdf4); border: 1.5px solid #bbf7d0; }
+    .ai-bubble-box { height: 240px; overflow-y: auto; background: white; border-radius: 10px; padding: 12px; border: 1px solid #dcfce7; display: flex; flex-direction: column; gap: 10px; margin-bottom: 10px; }
+    .ai-msg { padding: 10px 14px; border-radius: 12px; font-size: 14px; line-height: 1.5; max-width: 85%; word-break: break-word; white-space: pre-wrap; }
+    .ai-msg.ai { background: #f0fdf4; border: 1px solid #bbf7d0; color: #14532d; align-self: flex-start; }
+    .ai-msg.user { background: #16a34a; color: white; align-self: flex-end; }
   </style>
 </head>
 <body>
@@ -67,9 +67,9 @@
       🏡 우리 가족 홈 <span class="brand-hint">(클릭 시 가족명단)</span>
     </div>
 
-    <!-- 우리 가족 홈 누르면 뜨는 가족 명단 -->
+    <!-- 우리 가족 홈 클릭 시 뜨는 가입된 가족 명단 -->
     <div class="family-modal" id="familyModal">
-      <h3>👥 가입된 가족 목록</h3>
+      <h3>👥 함께하는 가족 목록</h3>
       <ul class="family-list">
         {% for u in all_users %}
           <li class="family-item">
@@ -87,15 +87,15 @@
     </div>
   </header>
 
-  <!-- 대화용 AI 가족 도우미 -->
+  <!-- 만능 대화형 AI 도우미 (질문 & 답변용) -->
   <div class="card ai-card">
-    <h2>🤖 똑똑한 AI 가족 도우미</h2>
+    <h2>🤖 만능 AI 가족 도우미</h2>
     <div class="ai-bubble-box" id="aiBubbleBox">
-      <div class="ai-msg ai">안녕하세요 {{ user.username }}님! 가족 일정, 오늘 저녁 메뉴 추천, 격려의 말 등 무엇이든 물어보세요! 😊</div>
+      <div class="ai-msg ai">안녕하세요 {{ user.username }}님! 궁금한 지식, 일상 질문, 요리법, 숙제/공부, 고민 상담 등 무엇이든 물어보세요. 성심껏 도와드릴게요! 💡</div>
     </div>
     <div class="chat-input-row">
-      <input type="text" id="aiInput" placeholder="AI에게 물어보기..." onkeypress="if(event.key==='Enter') askAI()">
-      <button class="action-btn" onclick="askAI()" style="width:70px; background:#4f46e5;">전송</button>
+      <input type="text" id="aiInput" placeholder="AI에게 궁금한 점이나 도움 요청하기..." onkeypress="if(event.key==='Enter') askAI()">
+      <button class="action-btn" id="aiSendBtn" onclick="askAI()" style="width:75px; background:#16a34a;">질문</button>
     </div>
   </div>
 
@@ -113,17 +113,17 @@
         {% endfor %}
       </div>
       <div class="chat-input-row">
-        <input type="text" id="chatInput" placeholder="메시지 입력 (Enter로 전송)..." onkeypress="if(event.key==='Enter') sendChat()">
+        <input type="text" id="chatInput" placeholder="가족 단톡방 메시지 입력..." onkeypress="if(event.key==='Enter') sendChat()">
         <button class="action-btn" onclick="sendChat()" style="width:70px;">전송</button>
       </div>
     </div>
   </div>
 
-  <!-- 공지사항 -->
+  <!-- 가족 공지사항 -->
   <div class="card">
     <h2>📢 가족 공지사항</h2>
     <form action="/add_notice" method="POST">
-      <textarea name="content" rows="2" placeholder="가족들에게 알릴 공지사항을 작성하세요..." required></textarea>
+      <textarea name="content" rows="2" placeholder="가족들에게 알릴 소식을 작성하세요..." required></textarea>
       <button type="submit" class="action-btn">공지 등록</button>
     </form>
     <ul class="item-list" id="noticeList">
@@ -150,7 +150,7 @@
           {% endif %}
         {% endfor %}
       </select>
-      <textarea name="content" rows="2" placeholder="따뜻한 칭찬 한마디를 남겨보세요..." required></textarea>
+      <textarea name="content" rows="2" placeholder="따뜻한 칭찬 한마디를 적어보세요..." required></textarea>
       <button type="submit" class="action-btn">칭찬 보내기</button>
     </form>
     <div style="font-weight: 600; font-size: 14px; margin-top: 10px; margin-bottom: 6px;">나에게 온 칭찬:</div>
@@ -161,16 +161,16 @@
           <div class="item-meta">{{ praise.created_at.strftime('%Y-%m-%d %H:%M') }}</div>
         </li>
       {% else %}
-        <div class="empty-text">아직 받은 칭찬이 없습니다. 서로에게 칭찬을 보내보세요!</div>
+        <div class="empty-text">아직 받은 칭찬이 없습니다. 서로에게 칭찬을 건네보세요!</div>
       {% endfor %}
     </ul>
   </div>
 
-  <!-- 할 일 목록 -->
+  <!-- 오늘 나의 할 일 -->
   <div class="card">
     <h2>✅ 오늘 나의 할 일</h2>
     <form action="/add_todo" method="POST">
-      <input type="text" name="content" placeholder="할 일을 적고 추가하세요..." required>
+      <input type="text" name="content" placeholder="오늘 해야 할 일을 등록하세요..." required>
       <button type="submit" class="action-btn">할 일 추가</button>
     </form>
     <ul class="item-list">
@@ -198,38 +198,46 @@
       }
     });
 
-    // 대화형 AI 도우미 로직
-    function askAI() {
+    // 만능 AI 도우미 비동기 질의응답
+    async function askAI() {
       const input = document.getElementById('aiInput');
       const box = document.getElementById('aiBubbleBox');
-      const query = input.value.trim();
-      if (!query) return;
+      const btn = document.getElementById('aiSendBtn');
+      const prompt = input.value.trim();
+      if (!prompt) return;
 
-      // 내 질문 띄우기
-      box.innerHTML += `<div class="ai-msg user">${query}</div>`;
+      // 사용자 질문 즉시 화면 표시
+      box.innerHTML += `<div class="ai-msg user">${prompt}</div>`;
       input.value = '';
+      
+      // 답변 생성 중 표시
+      const loadingId = 'ai-loading-' + Date.now();
+      box.innerHTML += `<div class="ai-msg ai" id="${loadingId}">답변을 생각하고 있어요... 💭</div>`;
       box.scrollTop = box.scrollHeight;
+      btn.disabled = true;
 
-      // AI 스마트 응답 (메뉴 추천, 격려, 계산 등)
-      setTimeout(() => {
-        let reply = "가족들과 함께하는 따뜻하고 행복한 시간 보내세요! ✨";
-        if (query.includes("메뉴") || query.includes("밥") || query.includes("저녁") || query.includes("점심")) {
-          const foods = ["맛있는 김치찌개와 계란말이", "바삭한 삼겹살 파티", "따뜻한 된장찌개", "온 가족이 함께 먹는 떡볶이와 튀김", "소고기 볶음밥"];
-          reply = `오늘 식사로 **${foods[Math.floor(Math.random() * foods.length)]}** 어떠세요? 🍲`;
-        } else if (query.includes("심심") || query.includes("놀자")) {
-          reply = "가족들과 가벼운 끝말잇기나 보드게임 한 판 어떠세요? 🎲";
-        } else if (query.includes("사랑해") || query.includes("고마워")) {
-          reply = "마음을 표현하는 멋진 가족이네요! 우편함에도 칭찬 한마디를 남겨보세요. ❤️";
-        } else if (query.includes("날씨")) {
-          reply = "외출 전 겉옷을 잘 챙기시고 오늘도 좋은 하루 보내세요! ☀️";
-        }
-        
-        box.innerHTML += `<div class="ai-msg ai">${reply}</div>`;
+      try {
+        const res = await fetch('/api/ai_chat', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ prompt: prompt })
+        });
+        const data = await res.json();
+        const loadElem = document.getElementById(loadingId);
+        if (loadElem) loadElem.remove();
+
+        box.innerHTML += `<div class="ai-msg ai">${data.reply || '답변을 불러오지 못했습니다.'}</div>`;
+      } catch (err) {
+        const loadElem = document.getElementById(loadingId);
+        if (loadElem) loadElem.remove();
+        box.innerHTML += `<div class="ai-msg ai">일시적인 네트워크 오류가 발생했습니다. 잠시 후 다시 질문해 주세요.</div>`;
+      } finally {
+        btn.disabled = false;
         box.scrollTop = box.scrollHeight;
-      }, 500);
+      }
     }
 
-    // 실시간 채팅 전송
+    // 가족 단톡방 전송
     async function sendChat() {
       const input = document.getElementById('chatInput');
       const text = input.value.trim();
@@ -244,7 +252,7 @@
       syncData();
     }
 
-    // 무새로고침 백그라운드 동기화 (2초)
+    // 실시간 동기화
     async function syncData() {
       try {
         const res = await fetch('/api/live_sync');
