@@ -9,14 +9,26 @@
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
-    body { background: #f1f5f9; color: #1e293b; padding: 16px; max-width: 650px; margin: 0 auto; padding-bottom: 50px; }
+    body { background: #f1f5f9; color: #1e293b; padding: 16px; max-width: 680px; margin: 0 auto; padding-bottom: 70px; }
 
-    header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; padding-bottom: 12px; border-bottom: 2px solid #e2e8f0; }
-    .brand-title { font-size: 22px; font-weight: 800; color: #0f172a; display: flex; align-items: center; gap: 8px; }
+    /* 헤더 및 드롭다운 */
+    header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; padding-bottom: 12px; border-bottom: 2px solid #e2e8f0; position: relative; }
+    .brand-title { font-size: 22px; font-weight: 800; color: #0f172a; display: flex; align-items: center; gap: 8px; cursor: pointer; user-select: none; }
+    .brand-title:hover { opacity: 0.8; }
+    .brand-hint { font-size: 11px; color: #2563eb; font-weight: normal; margin-left: 4px; }
+    
+    .family-modal { display: none; position: absolute; top: 48px; left: 0; background: white; border: 1px solid #cbd5e1; border-radius: 12px; padding: 15px; width: 260px; box-shadow: 0 10px 25px rgba(0,0,0,0.15); z-index: 100; }
+    .family-modal.active { display: block; }
+    .family-modal h3 { font-size: 14px; margin-bottom: 10px; color: #334e68; }
+    .family-list { list-style: none; display: flex; flex-direction: column; gap: 8px; }
+    .family-item { display: flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 600; }
+    .status-dot { width: 8px; height: 8px; background: #10b981; border-radius: 50%; }
+
     .user-info { display: flex; align-items: center; gap: 10px; }
     .badge-name { background: #e2e8f0; padding: 6px 12px; border-radius: 20px; font-size: 14px; font-weight: 600; }
     .btn-logout { background: #ef4444; color: white; border: none; padding: 6px 12px; border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer; text-decoration: none; }
 
+    /* 카드 레이아웃 */
     .card { background: white; border-radius: 16px; padding: 20px; margin-bottom: 20px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); border: 1px solid #e2e8f0; }
     .card h2 { font-size: 17px; margin-bottom: 14px; display: flex; align-items: center; gap: 8px; color: #1e293b; }
 
@@ -31,7 +43,7 @@
     .empty-text { font-size: 13px; color: #94a3b8; text-align: center; padding: 10px 0; }
 
     /* 실시간 채팅 박스 */
-    .chat-container { display: flex; flex-direction: column; height: 350px; }
+    .chat-container { display: flex; flex-direction: column; height: 320px; }
     .chat-messages { flex: 1; overflow-y: auto; padding: 10px; background: #f8fafc; border-radius: 10px; display: flex; flex-direction: column; gap: 8px; margin-bottom: 10px; }
     .chat-bubble { max-width: 80%; padding: 8px 12px; border-radius: 12px; font-size: 14px; line-height: 1.4; }
     .chat-bubble.mine { align-self: flex-end; background: #2563eb; color: white; border-bottom-right-radius: 2px; }
@@ -39,17 +51,53 @@
     .chat-meta { font-size: 10px; opacity: 0.7; margin-top: 2px; }
     .chat-input-row { display: flex; gap: 8px; }
     .chat-input-row input { flex: 1; }
+
+    /* 대화용 AI 비서 섹션 */
+    .ai-card { background: linear-gradient(145deg, #ffffff, #eff6ff); border: 1.5px solid #bfdbfe; }
+    .ai-bubble-box { height: 180px; overflow-y: auto; background: white; border-radius: 10px; padding: 12px; border: 1px solid #dbeafe; display: flex; flex-direction: column; gap: 8px; margin-bottom: 10px; }
+    .ai-msg { padding: 8px 12px; border-radius: 10px; font-size: 13px; line-height: 1.4; max-width: 85%; }
+    .ai-msg.ai { background: #e0e7ff; color: #1e1b4b; align-self: flex-start; }
+    .ai-msg.user { background: #3b82f6; color: white; align-self: flex-end; }
   </style>
 </head>
 <body>
 
   <header>
-    <div class="brand-title">🏡 우리 가족 홈</div>
+    <div class="brand-title" onclick="toggleFamilyModal()">
+      🏡 우리 가족 홈 <span class="brand-hint">(클릭 시 가족명단)</span>
+    </div>
+
+    <!-- 우리 가족 홈 누르면 뜨는 가족 명단 -->
+    <div class="family-modal" id="familyModal">
+      <h3>👥 가입된 가족 목록</h3>
+      <ul class="family-list">
+        {% for u in all_users %}
+          <li class="family-item">
+            <span class="status-dot"></span>
+            <span>{{ u.username }}</span>
+            {% if u.username == user.username %}<span style="font-size:11px; color:#2563eb;">(나)</span>{% endif %}
+          </li>
+        {% endfor %}
+      </ul>
+    </div>
+
     <div class="user-info">
       <span class="badge-name">{{ user.username }}님</span>
       <a href="/logout" class="btn-logout">로그아웃</a>
     </div>
   </header>
+
+  <!-- 대화용 AI 가족 도우미 -->
+  <div class="card ai-card">
+    <h2>🤖 똑똑한 AI 가족 도우미</h2>
+    <div class="ai-bubble-box" id="aiBubbleBox">
+      <div class="ai-msg ai">안녕하세요 {{ user.username }}님! 가족 일정, 오늘 저녁 메뉴 추천, 격려의 말 등 무엇이든 물어보세요! 😊</div>
+    </div>
+    <div class="chat-input-row">
+      <input type="text" id="aiInput" placeholder="AI에게 물어보기..." onkeypress="if(event.key==='Enter') askAI()">
+      <button class="action-btn" onclick="askAI()" style="width:70px; background:#4f46e5;">전송</button>
+    </div>
+  </div>
 
   <!-- 실시간 가족 단톡방 -->
   <div class="card">
@@ -135,7 +183,53 @@
   </div>
 
   <script>
-    // 채팅 전송
+    // '우리 가족 홈' 클릭 시 가족 명단 토글
+    function toggleFamilyModal() {
+      const modal = document.getElementById('familyModal');
+      modal.classList.toggle('active');
+    }
+
+    // 모달 바깥 누르면 닫기
+    document.addEventListener('click', (e) => {
+      const modal = document.getElementById('familyModal');
+      const title = document.querySelector('.brand-title');
+      if (!title.contains(e.target) && !modal.contains(e.target)) {
+        modal.classList.remove('active');
+      }
+    });
+
+    // 대화형 AI 도우미 로직
+    function askAI() {
+      const input = document.getElementById('aiInput');
+      const box = document.getElementById('aiBubbleBox');
+      const query = input.value.trim();
+      if (!query) return;
+
+      // 내 질문 띄우기
+      box.innerHTML += `<div class="ai-msg user">${query}</div>`;
+      input.value = '';
+      box.scrollTop = box.scrollHeight;
+
+      // AI 스마트 응답 (메뉴 추천, 격려, 계산 등)
+      setTimeout(() => {
+        let reply = "가족들과 함께하는 따뜻하고 행복한 시간 보내세요! ✨";
+        if (query.includes("메뉴") || query.includes("밥") || query.includes("저녁") || query.includes("점심")) {
+          const foods = ["맛있는 김치찌개와 계란말이", "바삭한 삼겹살 파티", "따뜻한 된장찌개", "온 가족이 함께 먹는 떡볶이와 튀김", "소고기 볶음밥"];
+          reply = `오늘 식사로 **${foods[Math.floor(Math.random() * foods.length)]}** 어떠세요? 🍲`;
+        } else if (query.includes("심심") || query.includes("놀자")) {
+          reply = "가족들과 가벼운 끝말잇기나 보드게임 한 판 어떠세요? 🎲";
+        } else if (query.includes("사랑해") || query.includes("고마워")) {
+          reply = "마음을 표현하는 멋진 가족이네요! 우편함에도 칭찬 한마디를 남겨보세요. ❤️";
+        } else if (query.includes("날씨")) {
+          reply = "외출 전 겉옷을 잘 챙기시고 오늘도 좋은 하루 보내세요! ☀️";
+        }
+        
+        box.innerHTML += `<div class="ai-msg ai">${reply}</div>`;
+        box.scrollTop = box.scrollHeight;
+      }, 500);
+    }
+
+    // 실시간 채팅 전송
     async function sendChat() {
       const input = document.getElementById('chatInput');
       const text = input.value.trim();
@@ -150,14 +244,13 @@
       syncData();
     }
 
-    // 2초마다 무새로고침 백그라운드 동기화
+    // 무새로고침 백그라운드 동기화 (2초)
     async function syncData() {
       try {
         const res = await fetch('/api/live_sync');
         if (!res.ok) return;
         const data = await res.json();
 
-        // 채팅 업데이트
         const chatBox = document.getElementById('chatList');
         chatBox.innerHTML = data.chats.map(c => `
           <div class="chat-bubble ${c.is_me ? 'mine' : 'other'}">
@@ -166,7 +259,6 @@
             <div class="chat-meta">${c.time}</div>
           </div>
         `).join('');
-        chatBox.scrollTop = chatBox.scrollHeight;
       } catch (err) {}
     }
 
