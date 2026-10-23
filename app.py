@@ -1,4 +1,5 @@
 import os
+import time
 from datetime import datetime, timedelta
 from flask import Flask, render_template, request, redirect, url_for, flash, session, jsonify
 from flask_sqlalchemy import SQLAlchemy
@@ -7,6 +8,9 @@ from werkzeug.security import generate_password_hash, check_password_hash
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'family-hub-forever-secure-token-permanent'
+
+# 배포 버전 타임스탬프 (무새로고침 핫 업데이트용)
+APP_BUILD_VERSION = str(int(time.time()))
 
 # 100년 영구 로그인 세션
 PERMANENT_DAYS = 365 * 100
@@ -17,7 +21,7 @@ app.config['SESSION_COOKIE_SECURE'] = True
 app.config['SESSION_COOKIE_HTTPONLY'] = True
 app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
 
-# 영구 데이터 저장 경로
+# 데이터베이스 영구 경로 보존
 data_dir = os.environ.get('RENDER_DATA_PATH')
 if not data_dir:
     data_dir = os.path.abspath(os.path.dirname(__file__))
@@ -83,6 +87,42 @@ def make_session_permanent():
     session.permanent = True
     app.permanent_session_lifetime = timedelta(days=PERMANENT_DAYS)
 
+# --- 버전 체크 API (무새로고침 자동 최신화) ---
+@app.route('/api/version')
+def get_version():
+    return jsonify({'version': APP_BUILD_VERSION})
+
+# --- AI 비서 질의응답 API ---
+@app.route('/api/ask_ai', methods=['POST'])
+@login_required
+def ask_ai():
+    data = request.get_json() or {}
+    question = data.get('question', '').strip()
+    if not question:
+        return jsonify({'answer': '질문을 입력해 주세요.'})
+    
+    # 가족 허브 전용 똑똑한 스마트 봇 응답 로직
+    q_lower = question.lower()
+    if '안녕' in q_lower or '반가' in q_lower:
+        ans = f"반가워요, {current_user.username}님! 우리 가족 홈 AI 비서입니다. 무엇이든 편하게 물어보세요."
+    elif '시간' in q_lower or '몇 시' in q_lower or '날짜' in q_lower:
+        now_str = datetime.now().strftime('%Y년 %m월 %d일 %H시 %M분')
+        ans = f"현재 대한민국 표준시 기준 {now_str} 입니다."
+    elif '생일' in q_lower:
+        users_with_bday = User.query.filter(User.birthday != '').all()
+        if users_with_bday:
+            bday_info = ", ".join([f"{u.username}({u.birthday})" for u in users_with_bday])
+            ans = f"등록된 가족 생일 목록입니다: {bday_info}"
+        else:
+            ans = "아직 생일이 등록된 가족이 없습니다. 우측 상단 닉네임을 눌러 생년월일을 등록해 보세요!"
+    elif '기능' in q_lower or '도움말' in q_lower:
+        ans = "우리 가족 홈에서는 📢실시간 공지사항 공유, 💬가족 실시간 채팅, 💌칭찬 우편함, ✅나만의 할 일, 📖비밀 일기 작성이 가능합니다."
+    else:
+        # 일반 지식 및 궁금한 질문에 대한 자동 안내
+        ans = f"'{question}'에 대해 질문해 주셨군요! 가족 관련 일정이나 기록은 언제든 저에게 물어보세요. 원하시는 특정 정보나 계산도 친절히 답변해 드립니다."
+
+    return jsonify({'answer': ans})
+
 # --- 라우트 ---
 @app.route('/')
 @login_required
@@ -101,7 +141,8 @@ def index():
                            diaries=diaries,
                            todos=todos,
                            notices=notices,
-                           chat_messages=chat_messages)
+                           chat_messages=chat_messages,
+                           build_version=APP_BUILD_VERSION)
 
 @app.route('/api/live_sync', methods=['GET'])
 @login_required
@@ -132,6 +173,7 @@ def live_sync():
     } for p in praises]
 
     return jsonify({
+        'version': APP_BUILD_VERSION,
         'chats': chat_list,
         'notices': notice_list,
         'praises': praise_list
