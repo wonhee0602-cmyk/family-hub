@@ -4,11 +4,16 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>우리 가족 홈</title>
+    
+    <!-- PWA 설치 필수 메타 태그 및 매니페스트 -->
+    <link rel="manifest" href="{{ url_for('static', filename='manifest.json') }}">
+    <meta name="theme-color" content="#2563eb">
+    <link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/619/619153.png">
+
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
         body { background: #f8fafc; color: #1e293b; padding: 20px 16px; max-width: 600px; margin: 0 auto; }
         
-        /* 상단 헤더 & 프로필 드롭다운 */
         header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; padding-bottom: 12px; border-bottom: 2px solid #e2e8f0; position: relative; }
         h1 { font-size: 19px; font-weight: 700; color: #0f172a; }
         .nav-right { display: flex; align-items: center; gap: 12px; }
@@ -16,7 +21,6 @@
         .mail-btn { position: relative; background: none; border: none; font-size: 24px; cursor: pointer; padding: 4px; display: flex; align-items: center; }
         .mail-badge { position: absolute; top: 0; right: -4px; background: #ef4444; color: white; border-radius: 50%; font-size: 11px; font-weight: bold; width: 18px; height: 18px; display: flex; align-items: center; justify-content: center; }
 
-        /* 닉네임 버튼 & 드롭다운 메뉴 */
         .user-dropdown-container { position: relative; }
         .user-btn { background: #e2e8f0; color: #1e293b; border: 1px solid #cbd5e1; border-radius: 20px; padding: 6px 14px; font-size: 14px; font-weight: bold; cursor: pointer; display: flex; align-items: center; gap: 5px; }
         .user-btn:hover { background: #cbd5e1; }
@@ -27,7 +31,6 @@
         .dropdown-item:hover { background: #f8fafc; color: #0f172a; }
         .dropdown-item.logout { color: #ef4444; }
 
-        /* 카드 레이아웃 */
         .card { background: white; border-radius: 14px; padding: 18px; margin-bottom: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.04); border: 1px solid #e2e8f0; }
         .card h2 { font-size: 16px; margin-bottom: 12px; display: flex; align-items: center; gap: 6px; }
         form { display: flex; flex-direction: column; gap: 8px; margin-bottom: 14px; }
@@ -42,7 +45,6 @@
         .item-meta { font-size: 11px; color: #64748b; margin-top: 4px; display: block; }
         .empty-text { font-size: 13px; color: #94a3b8; text-align: center; padding: 8px 0; }
 
-        /* 모달 공통 */
         .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 100; justify-content: center; align-items: center; padding: 16px; }
         .modal-overlay.active { display: flex; }
         .modal-box { background: white; width: 100%; max-width: 440px; border-radius: 16px; max-height: 85vh; display: flex; flex-direction: column; overflow: hidden; box-shadow: 0 10px 25px rgba(0,0,0,0.2); }
@@ -53,7 +55,6 @@
         .mail-item { background: #fef3c7; border: 1px solid #fde68a; padding: 12px; border-radius: 10px; margin-bottom: 8px; font-size: 14px; }
         .mail-sender { font-weight: bold; color: #b45309; }
 
-        /* 날짜 선택 단계 */
         .step-label { font-size: 13px; font-weight: bold; color: #64748b; margin-top: 10px; margin-bottom: 4px; }
     </style>
 </head>
@@ -62,7 +63,6 @@
 <header>
     <h1>🏠 우리 가족 홈</h1>
     <div class="nav-right">
-        <!-- 칭찬 우편 버튼 -->
         <button class="mail-btn" onclick="openModal('mailModal')" title="칭찬 우편함">
             💌
             {% if my_praises|length > 0 %}
@@ -70,7 +70,6 @@
             {% endif %}
         </button>
 
-        <!-- 닉네임 버튼 & 드롭다운 -->
         <div class="user-dropdown-container">
             <button class="user-btn" onclick="toggleDropdown(event)">
                 👤 {{ user.username }} ▾
@@ -78,7 +77,7 @@
             <div class="dropdown-menu" id="userMenu">
                 <div class="dropdown-item" onclick="openModal('birthModal')">🎂 생년월일 정하기</div>
                 <div class="dropdown-item" onclick="openModal('settingModal')">⚙️ 설정</div>
-                <div class="dropdown-item" id="installBtn" onclick="installApp()">📲 앱 설치하기</div>
+                <div class="dropdown-item" id="installBtn" onclick="installAppDirect()">📲 앱 설치하기</div>
                 <a href="/logout" class="dropdown-item logout">🚪 로그아웃</a>
             </div>
         </div>
@@ -139,7 +138,7 @@
     </ul>
 </section>
 
-<!-- [모달 1] 생년월일 정하기 모달 (년도 선택 -> 월 선택 -> 일 선택) -->
+<!-- 생년월일 정하기 모달 -->
 <div class="modal-overlay" id="birthModal" onclick="closeModal(event, 'birthModal')">
     <div class="modal-box" onclick="event.stopPropagation()">
         <div class="modal-header">
@@ -172,7 +171,7 @@
     </div>
 </div>
 
-<!-- [모달 2] 설정 모달 -->
+<!-- 설정 모달 -->
 <div class="modal-overlay" id="settingModal" onclick="closeModal(event, 'settingModal')">
     <div class="modal-box" onclick="event.stopPropagation()">
         <div class="modal-header">
@@ -184,13 +183,13 @@
             <p style="color: #64748b; margin-top: 4px;">가족 초대 코드: <strong>서희스타일스</strong></p>
             <p style="color: #64748b;">내 계정 닉네임: <strong>{{ user.username }}</strong></p>
             <hr style="margin: 14px 0; border: none; border-top: 1px solid #e2e8f0;">
-            <p style="color: #0f172a; font-weight: 600;">알림 및 자동 업데이트</p>
-            <p style="color: #64748b; font-size: 13px; margin-top: 4px;">PWA 앱 캐시 및 자동 로그인 세션이 영구 유지됩니다.</p>
+            <p style="color: #0f172a; font-weight: 600;">영구 유지 설정</p>
+            <p style="color: #64748b; font-size: 13px; margin-top: 4px;">로그아웃을 직접 누르지 않는 한 100년간 자동 로그인 상태가 지속됩니다.</p>
         </div>
     </div>
 </div>
 
-<!-- [모달 3] 칭찬 우편함 모달 -->
+<!-- 칭찬 우편함 모달 -->
 <div class="modal-overlay" id="mailModal" onclick="closeModal(event, 'mailModal')">
     <div class="modal-box" onclick="event.stopPropagation()">
         <div class="modal-header">
@@ -229,7 +228,6 @@
 </div>
 
 <script>
-    // 드롭다운 토글
     function toggleDropdown(e) {
         e.stopPropagation();
         document.getElementById('userMenu').classList.toggle('active');
@@ -238,7 +236,6 @@
         document.getElementById('userMenu').classList.remove('active');
     });
 
-    // 모달 제어
     function openModal(id) {
         document.getElementById('userMenu').classList.remove('active');
         document.getElementById(id).classList.add('active');
@@ -252,12 +249,11 @@
         }
     }
 
-    // --- 생년월일 연쇄 선택 로직 (년 -> 월 -> 일) ---
+    // 생년월일 로직
     const yearSelect = document.getElementById('yearSelect');
     const monthSelect = document.getElementById('monthSelect');
     const daySelect = document.getElementById('daySelect');
 
-    // 연도 목록 생성 (1940년 ~ 현재 연도)
     const currentYear = new Date().getFullYear();
     for (let y = currentYear; y >= 1940; y--) {
         const opt = document.createElement('option');
@@ -266,7 +262,6 @@
         yearSelect.appendChild(opt);
     }
 
-    // 연도 선택 시 -> 월 활성화
     function onYearChange() {
         monthSelect.innerHTML = '<option value="" disabled selected>월을 선택하세요</option>';
         daySelect.innerHTML = '<option value="" disabled selected>일을 선택하세요</option>';
@@ -281,13 +276,10 @@
         monthSelect.disabled = false;
     }
 
-    // 월 선택 시 -> 일수 계산(윤년 포함) 후 일 활성화
     function onMonthChange() {
         daySelect.innerHTML = '<option value="" disabled selected>일을 선택하세요</option>';
         const year = parseInt(yearSelect.value);
         const month = parseInt(monthSelect.value);
-        
-        // 해당 년/월의 말일 계산
         const daysInMonth = new Date(year, month, 0).getDate();
 
         for (let d = 1; d <= daysInMonth; d++) {
@@ -299,29 +291,34 @@
         daySelect.disabled = false;
     }
 
-    // --- PWA 앱 설치 이벤트 연결 ---
+    // --- PWA 원클릭 설치 로직 ---
     let deferredPrompt = null;
+
+    // 서비스 워커 등록
+    if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.register("{{ url_for('static', filename='sw.js') }}")
+            .then(reg => reg.update());
+    }
+
+    // 브라우저의 설치 준비 이벤트를 가로채서 대기
     window.addEventListener('beforeinstallprompt', (e) => {
         e.preventDefault();
         deferredPrompt = e;
     });
 
-    function installApp() {
+    // 앱 설치하기 클릭 시 중간 과정 없이 곧바로 기기 확인창 실행
+    function installAppDirect() {
+        document.getElementById('userMenu').classList.remove('active');
+        
         if (deferredPrompt) {
-            deferredPrompt.prompt();
+            deferredPrompt.prompt(); // 브라우저 설치 팝업 직접 호출
             deferredPrompt.userChoice.then((choiceResult) => {
                 deferredPrompt = null;
             });
         } else {
-            alert('스마트폰 브라우저 메뉴의 [홈 화면에 추가] 또는 PC 브라우저 주소창 우측 끝의 [설치] 아이콘을 통해 설치하실 수 있습니다.');
+            // 이미 설치되었거나 자동 호출을 지원하지 않는 브라우저인 경우에만 팝업 안내
+            alert('이미 설치되어 있거나 브라우저 메뉴(공유 -> 홈 화면에 추가)에서 바로 설치하실 수 있습니다.');
         }
-    }
-
-    // 자동 업데이트
-    if ('serviceWorker' in navigator) {
-        navigator.serviceWorker.getRegistrations().then((registrations) => {
-            for (let reg of registrations) reg.update();
-        });
     }
 </script>
 
