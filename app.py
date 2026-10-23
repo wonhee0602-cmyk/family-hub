@@ -1,6 +1,6 @@
 import os
 from datetime import datetime, timedelta
-from flask import Flask, render_template, request, redirect, url_for, flash, session
+from flask import Flask, render_template, request, redirect, url_for, flash, session, jsonify
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager, UserMixin, login_user, login_required, logout_user, current_user
 from werkzeug.security import generate_password_hash, check_password_hash
@@ -17,7 +17,7 @@ app.config['SESSION_COOKIE_SECURE'] = True
 app.config['SESSION_COOKIE_HTTPONLY'] = True
 app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
 
-# 업데이트/배포 시에도 절대 데이터가 날아가지 않는 안전한 저장 경로
+# 영구 데이터 저장 경로
 data_dir = os.environ.get('RENDER_DATA_PATH')
 if not data_dir:
     data_dir = os.path.abspath(os.path.dirname(__file__))
@@ -62,6 +62,13 @@ class Notice(db.Model):
     content = db.Column(db.Text, nullable=False)
     created_at = db.Column(db.DateTime, default=datetime.now)
 
+# 실시간 가족 채팅 모델
+class ChatMessage(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    sender = db.Column(db.String(50), nullable=False)
+    message = db.Column(db.Text, nullable=False)
+    created_at = db.Column(db.DateTime, default=datetime.now)
+
 @login_manager.user_loader
 def load_user(user_id):
     try:
@@ -86,6 +93,7 @@ def index():
     diaries = Diary.query.filter_by(user_id=current_user.id).order_by(Diary.created_at.desc()).all()
     todos = Todo.query.filter_by(user_id=current_user.id).all()
     notices = Notice.query.order_by(Notice.created_at.desc()).all()
+    chat_messages = ChatMessage.query.order_by(ChatMessage.created_at.asc()).all()
     
     return render_template('index.html', 
                            user=current_user, 
@@ -93,7 +101,59 @@ def index():
                            my_praises=my_praises,
                            diaries=diaries,
                            todos=todos,
-                           notices=notices)
+                           notices=notices,
+                           chat_messages=chat_messages)
+
+# --- 실시간 동기화 API (새로고침 없이 갱신) ---
+@app.route('/api/live_sync', methods=['GET'])
+@login_required
+def live_sync():
+    # 1. 채팅 메시지 (최근 50개)
+    chats = ChatMessage.query.order_by(ChatMessage.created_at.asc()).limit(50).all()
+    chat_list = [{
+        'id': c.id,
+        'sender': c.sender,
+        'message': c.message,
+        'time': c.created_at.strftime('%H:%M'),
+        'is_me': (c.sender == current_user.username)
+    } for c in chats]
+
+    # 2. 공지사항
+    notices = Notice.query.order_by(Notice.created_at.desc()).all()
+    notice_list = [{
+        'id': n.id,
+        'author': n.author,
+        'content': n.content,
+        'time': n.created_at.strftime('%Y-%m-%d %H:%M')
+    } for n in notices]
+
+    # 3. 내 우편함(칭찬)
+    praises = Praise.query.filter_by(receiver=current_user.username).order_by(Praise.created_at.desc()).all()
+    praise_list = [{
+        'id': p.id,
+        'sender': p.sender,
+        'content': p.content,
+        'time': p.created_at.strftime('%Y-%m-%d %H:%M')
+    } for p in praises]
+
+    return jsonify({
+        'chats': chat_list,
+        'notices': notice_list,
+        'praises': praise_list
+    })
+
+# 채팅 전송 API
+@app.route('/api/chat/send', methods=['POST'])
+@login_required
+def send_chat():
+    data = request.get_json() or {}
+    message = data.get('message', '').strip()
+    if message:
+        new_msg = ChatMessage(sender=current_user.username, message=message)
+        db.session.add(new_msg)
+        db.session.commit()
+        return jsonify({'status': 'ok', 'sender': current_user.username, 'message': message})
+    return jsonify({'status': 'fail'}), 400
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
