@@ -14,7 +14,11 @@
         body { background: #f8fafc; color: #1e293b; padding: 20px 16px; max-width: 600px; margin: 0 auto; }
         
         header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; padding-bottom: 12px; border-bottom: 2px solid #e2e8f0; position: relative; }
-        h1 { font-size: 19px; font-weight: 700; color: #0f172a; }
+        
+        /* 우리 가족 홈 클릭 가능 헤더 버튼 */
+        .brand-title { font-size: 20px; font-weight: 800; color: #0f172a; cursor: pointer; display: flex; align-items: center; gap: 6px; padding: 4px 8px; border-radius: 8px; transition: background 0.2s; user-select: none; }
+        .brand-title:hover { background: #e2e8f0; }
+
         .nav-right { display: flex; align-items: center; gap: 12px; }
         
         .mail-btn { position: relative; background: none; border: none; font-size: 24px; cursor: pointer; padding: 4px; display: flex; align-items: center; }
@@ -55,12 +59,21 @@
         .mail-item { background: #fef3c7; border: 1px solid #fde68a; padding: 12px; border-radius: 10px; margin-bottom: 8px; font-size: 14px; }
         .mail-sender { font-weight: bold; color: #b45309; }
         .step-label { font-size: 13px; font-weight: bold; color: #64748b; margin-top: 10px; margin-bottom: 4px; }
+
+        /* 가족 멤버 목록 카드 */
+        .family-member-card { display: flex; justify-content: space-between; align-items: center; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; padding: 12px 14px; margin-bottom: 8px; }
+        .member-name { font-weight: 700; font-size: 15px; color: #0f172a; display: flex; align-items: center; gap: 6px; }
+        .member-bday { font-size: 13px; color: #64748b; background: #e2e8f0; padding: 3px 8px; border-radius: 12px; }
     </style>
 </head>
 <body>
 
 <header>
-    <h1>🏠 우리 가족 홈</h1>
+    <!-- 누르면 가족 명단이 뜨는 타이틀 -->
+    <div class="brand-title" onclick="openModal('familyModal')" title="가족 명단 보기">
+        🏠 우리 가족 홈 ▾
+    </div>
+
     <div class="nav-right">
         <button class="mail-btn" onclick="openModal('mailModal')" title="칭찬 우편함">
             💌
@@ -137,6 +150,36 @@
     </ul>
 </section>
 
+<!-- [새 모달] 우리 가족 명단 모달 -->
+<div class="modal-overlay" id="familyModal" onclick="closeModal(event, 'familyModal')">
+    <div class="modal-box" onclick="event.stopPropagation()">
+        <div class="modal-header">
+            <h3>👨‍👩‍👧‍👦 우리 가족 구성원 ({{ all_users|length }}명)</h3>
+            <button class="close-btn" onclick="closeModalDirect('familyModal')">✕</button>
+        </div>
+        <div class="modal-content">
+            <p style="font-size: 13px; color: #64748b; margin-bottom: 14px;">현재 가입되어 있는 모든 가족 닉네임입니다:</p>
+            <div>
+                {% for u in all_users %}
+                <div class="family-member-card">
+                    <span class="member-name">
+                        👤 {{ u.username }}
+                        {% if u.username == user.username %}
+                        <span style="font-size: 11px; color: #2563eb; background: #dbeafe; padding: 2px 6px; border-radius: 8px;">나</span>
+                        {% endif %}
+                    </span>
+                    <span class="member-bday">
+                        🎂 {{ u.birthday if u.birthday else '생일 미등록' }}
+                    </span>
+                </div>
+                {% else %}
+                <p class="empty-text">가입된 가족이 없습니다.</p>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</div>
+
 <!-- 생년월일 정하기 모달 -->
 <div class="modal-overlay" id="birthModal" onclick="closeModal(event, 'birthModal')">
     <div class="modal-box" onclick="event.stopPropagation()">
@@ -182,8 +225,8 @@
             <p style="color: #64748b; margin-top: 4px;">가족 초대 코드: <strong>서희스타일스</strong></p>
             <p style="color: #64748b;">내 계정 닉네임: <strong>{{ user.username }}</strong></p>
             <hr style="margin: 14px 0; border: none; border-top: 1px solid #e2e8f0;">
-            <p style="color: #0f172a; font-weight: 600;">공지사항 실시간 알람</p>
-            <p style="color: #64748b; font-size: 13px; margin-top: 4px;">가족이 공지를 올리면 자동으로 기기 알림이 발생합니다.</p>
+            <p style="color: #0f172a; font-weight: 600;">알림 및 자동 업데이트</p>
+            <p style="color: #64748b; font-size: 13px; margin-top: 4px;">코드 배포 시에도 가입 계정과 데이터는 영구 보존되며, 설치된 앱은 자동으로 최신 버전으로 갱신됩니다.</p>
             <button type="button" class="action-btn" onclick="requestNoticePermission()" style="margin-top: 10px; padding: 8px;">🔔 알림 권한 허용하기</button>
         </div>
     </div>
@@ -291,11 +334,23 @@
         daySelect.disabled = false;
     }
 
-    // --- PWA 설치 ---
+    // --- PWA 설치 및 즉시 자동 업데이트 강제 로직 ---
     let deferredPrompt = null;
     if ('serviceWorker' in navigator) {
         navigator.serviceWorker.register("{{ url_for('static', filename='sw.js') }}")
-            .then(reg => reg.update());
+            .then(reg => {
+                // 접속 시마다 서비스 워커 업데이트 강제 체크
+                reg.update();
+                reg.onupdatefound = () => {
+                    const installingWorker = reg.installing;
+                    installingWorker.onstatechange = () => {
+                        if (installingWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                            // 최신 배포 감지 시 자동으로 페이지를 최신 상태로 새로고침
+                            window.location.reload();
+                        }
+                    };
+                };
+            });
     }
 
     window.addEventListener('beforeinstallprompt', (e) => {
@@ -313,28 +368,25 @@
         }
     }
 
-    // --- 📢 실시간 공지사항 알림 로직 ---
+    // 알림 권한
     function requestNoticePermission() {
         if ('Notification' in window) {
             Notification.requestPermission().then(permission => {
                 if (permission === 'granted') {
-                    alert('알림 권한이 허용되었습니다. 새 공지 등록 시 실시간으로 알람이 옵니다.');
+                    alert('알림 권한이 허용되었습니다.');
                 }
             });
         }
     }
-
-    // 사이트 최초 접속 시 자동 알림 권한 요청
     if ('Notification' in window && Notification.permission === 'default') {
         Notification.requestPermission();
     }
 
-    // 최신 공지 ID 추적 (가장 최근 공지사항)
+    // 공지 실시간 알람
     const firstNotice = document.querySelector('#noticeList .item');
     let lastNoticeId = firstNotice ? firstNotice.getAttribute('data-id') : '0';
     const currentUser = "{{ user.username }}";
 
-    // 10초마다 새 공지가 올라왔는지 확인
     setInterval(() => {
         fetch('/')
             .then(res => res.text())
@@ -350,7 +402,6 @@
                         const author = newFirstNotice.querySelector('strong').innerText.replace(':', '');
                         const fullText = newFirstNotice.innerText;
                         
-                        // 내가 쓴 글이 아닌 다른 가족이 쓴 글일 때 알림 트리거
                         if (author.trim() !== currentUser) {
                             if ('Notification' in window && Notification.permission === 'granted') {
                                 new Notification('📢 새 가족 공지사항!', {
@@ -359,7 +410,6 @@
                                 });
                             }
                         }
-                        // 화면 목록 자동 갱신
                         document.getElementById('noticeList').innerHTML = doc.getElementById('noticeList').innerHTML;
                     }
                 }
