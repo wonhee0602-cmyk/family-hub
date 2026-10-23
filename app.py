@@ -8,6 +8,7 @@ from werkzeug.security import generate_password_hash, check_password_hash
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'family-hub-forever-secure-token-permanent'
 
+# 100년 영구 로그인 세션
 PERMANENT_DAYS = 365 * 100
 app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(days=PERMANENT_DAYS)
 app.config['REMEMBER_COOKIE_DURATION'] = timedelta(days=PERMANENT_DAYS)
@@ -16,15 +17,21 @@ app.config['SESSION_COOKIE_SECURE'] = True
 app.config['SESSION_COOKIE_HTTPONLY'] = True
 app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
 
-basedir = os.path.abspath(os.path.dirname(__file__))
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///' + os.path.join(basedir, 'family_main.db')
+# 업데이트/배포 시에도 절대 데이터가 날아가지 않는 안전한 저장 경로
+data_dir = os.environ.get('RENDER_DATA_PATH')
+if not data_dir:
+    data_dir = os.path.abspath(os.path.dirname(__file__))
+os.makedirs(data_dir, exist_ok=True)
+db_path = os.path.join(data_dir, 'family_permanent.db')
+
+app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///' + db_path
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 db = SQLAlchemy(app)
 login_manager = LoginManager(app)
 login_manager.login_view = 'login'
 
-# --- DB 모델 ---
+# --- 데이터 모델 ---
 class User(UserMixin, db.Model):
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(50), unique=True, nullable=False)
@@ -128,7 +135,6 @@ def register():
         return redirect(url_for('index'))
     return render_template('login.html')
 
-# 생년월일 저장
 @app.route('/set_birthday', methods=['POST'])
 @login_required
 def set_birthday():
