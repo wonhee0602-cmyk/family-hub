@@ -47,7 +47,6 @@
         .item-meta { font-size: 11px; color: #64748b; margin-top: 4px; display: block; }
         .empty-text { font-size: 13px; color: #94a3b8; text-align: center; padding: 8px 0; }
 
-        /* 모달 스타일 */
         .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 100; justify-content: center; align-items: center; padding: 16px; }
         .modal-overlay.active { display: flex; }
         .modal-box { background: white; width: 100%; max-width: 440px; border-radius: 16px; max-height: 85vh; display: flex; flex-direction: column; overflow: hidden; box-shadow: 0 10px 25px rgba(0,0,0,0.2); }
@@ -63,7 +62,7 @@
         .member-name { font-weight: 700; font-size: 15px; color: #0f172a; display: flex; align-items: center; gap: 6px; }
         .member-bday { font-size: 13px; color: #64748b; background: #e2e8f0; padding: 3px 8px; border-radius: 12px; }
 
-        /* 실시간 채팅방 모달 전용 스타일 */
+        /* 채팅방 스타일 */
         .chat-container { display: flex; flex-direction: column; height: 380px; }
         .chat-messages { flex: 1; overflow-y: auto; padding: 12px; background: #f1f5f9; border-radius: 10px; display: flex; flex-direction: column; gap: 8px; }
         .chat-bubble { max-width: 75%; padding: 8px 12px; border-radius: 12px; font-size: 14px; line-height: 1.4; word-break: break-word; }
@@ -84,18 +83,15 @@
     </div>
 
     <div class="nav-right">
-        <!-- 💬 실시간 채팅방 버튼 -->
         <button class="icon-btn" onclick="openModal('chatModal')" title="가족 실시간 채팅방">
             💬
         </button>
 
-        <!-- 💌 칭찬 우편함 버튼 -->
         <button class="icon-btn" onclick="openModal('mailModal')" title="칭찬 우편함">
             💌
             <span class="mail-badge" id="mailBadge" style="display: none;">0</span>
         </button>
 
-        <!-- 👤 프로필 드롭다운 -->
         <div class="user-dropdown-container">
             <button class="user-btn" onclick="toggleDropdown(event)">
                 👤 {{ user.username }} ▾
@@ -110,7 +106,7 @@
     </div>
 </header>
 
-<!-- 1. 가족 공지사항 (실시간 자동 갱신) -->
+<!-- 1. 가족 공지사항 -->
 <section class="card">
     <h2>📢 가족 공지사항</h2>
     <form action="/add_notice" method="POST">
@@ -164,7 +160,7 @@
     </ul>
 </section>
 
-<!-- [모달 1] 💬 실시간 가족 채팅방 모달 -->
+<!-- 실시간 채팅 모달 -->
 <div class="modal-overlay" id="chatModal" onclick="closeModal(event, 'chatModal')">
     <div class="modal-box" onclick="event.stopPropagation()">
         <div class="modal-header">
@@ -173,9 +169,7 @@
         </div>
         <div class="modal-content" style="padding: 12px;">
             <div class="chat-container">
-                <div class="chat-messages" id="chatBox">
-                    <!-- 실시간 채팅 메시지 자동 주입 -->
-                </div>
+                <div class="chat-messages" id="chatBox"></div>
                 <div class="chat-input-bar">
                     <input type="text" id="chatInput" placeholder="메시지를 입력하세요..." onkeydown="if(event.key==='Enter') sendChatMessage()">
                     <button type="button" onclick="sendChatMessage()">전송</button>
@@ -185,7 +179,7 @@
     </div>
 </div>
 
-<!-- [모달 2] 💌 칭찬 우편함 모달 (실시간 갱신) -->
+<!-- 칭찬 우편함 모달 -->
 <div class="modal-overlay" id="mailModal" onclick="closeModal(event, 'mailModal')">
     <div class="modal-box" onclick="event.stopPropagation()">
         <div class="modal-header">
@@ -208,14 +202,12 @@
             </form>
             <hr style="border: none; border-top: 1px dashed #cbd5e1; margin: 16px 0;">
             <div style="font-weight: bold; margin-bottom: 8px;" id="praiseTitle">내가 받은 칭찬 (0)</div>
-            <div class="item-list" id="praiseList">
-                <!-- 실시간 주입 -->
-            </div>
+            <div class="item-list" id="praiseList"></div>
         </div>
     </div>
 </div>
 
-<!-- [모달 3] 가족 명단 모달 -->
+<!-- 가족 명단 모달 -->
 <div class="modal-overlay" id="familyModal" onclick="closeModal(event, 'familyModal')">
     <div class="modal-box" onclick="event.stopPropagation()">
         <div class="modal-header">
@@ -241,7 +233,7 @@
     </div>
 </div>
 
-<!-- [모달 4] 생년월일 정하기 모달 -->
+<!-- 생년월일 정하기 모달 -->
 <div class="modal-overlay" id="birthModal" onclick="closeModal(event, 'birthModal')">
     <div class="modal-box" onclick="event.stopPropagation()">
         <div class="modal-header">
@@ -269,7 +261,7 @@
     </div>
 </div>
 
-<!-- [모달 5] 설정 모달 -->
+<!-- 설정 모달 -->
 <div class="modal-overlay" id="settingModal" onclick="closeModal(event, 'settingModal')">
     <div class="modal-box" onclick="event.stopPropagation()">
         <div class="modal-header">
@@ -281,8 +273,8 @@
             <p style="color: #64748b; margin-top: 4px;">가족 초대 코드: <strong>서희스타일스</strong></p>
             <p style="color: #64748b;">내 계정 닉네임: <strong>{{ user.username }}</strong></p>
             <hr style="margin: 14px 0; border: none; border-top: 1px solid #e2e8f0;">
-            <p style="color: #0f172a; font-weight: 600;">실시간 동기화</p>
-            <p style="color: #64748b; font-size: 13px; margin-top: 4px;">채팅, 공지사항, 칭찬 우편함이 새로고침 없이 실시간으로 동기화됩니다.</p>
+            <p style="color: #0f172a; font-weight: 600;">실시간 자동 갱신</p>
+            <p style="color: #64748b; font-size: 13px; margin-top: 4px;">사이트/앱 접속 시 최신 버전이 있으면 새로고침 없이 백그라운드에서 자동 업데이트됩니다.</p>
             <button type="button" class="action-btn" onclick="requestNoticePermission()" style="margin-top: 10px; padding: 8px;">🔔 알림 권한 허용</button>
         </div>
     </div>
@@ -316,7 +308,7 @@
         }
     }
 
-    // 생년월일 로직
+    // 생년월일
     const yearSelect = document.getElementById('yearSelect');
     const monthSelect = document.getElementById('monthSelect');
     const daySelect = document.getElementById('daySelect');
@@ -358,15 +350,39 @@
         daySelect.disabled = false;
     }
 
-    // --- PWA 설치 및 자동 갱신 ---
+    // --- 🚀 PWA 및 웹 접속 즉시 무(無)새로고침 자동 업데이트 로직 ---
     let deferredPrompt = null;
     if ('serviceWorker' in navigator) {
-        navigator.serviceWorker.register("{{ url_for('static', filename='sw.js') }}").then(reg => reg.update());
+        navigator.serviceWorker.register("{{ url_for('static', filename='sw.js') }}").then(reg => {
+            // 접속 즉시 서버에 새 코드가 있는지 무조건 체크
+            reg.update();
+
+            reg.addEventListener('updatefound', () => {
+                const newWorker = reg.installing;
+                newWorker.addEventListener('statechange', () => {
+                    if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                        // 최신 버전 발견 시 사용자 조작 없이 페이지를 스스로 최신화
+                        window.location.reload();
+                    }
+                });
+            });
+        });
+
+        // 활성화된 새 워커가 제어권을 잡으면 즉시 화면 동기화
+        let refreshing = false;
+        navigator.serviceWorker.addEventListener('controllerchange', () => {
+            if (!refreshing) {
+                refreshing = true;
+                window.location.reload();
+            }
+        });
     }
+
     window.addEventListener('beforeinstallprompt', (e) => {
         e.preventDefault();
         deferredPrompt = e;
     });
+
     function installAppDirect() {
         document.getElementById('userMenu').classList.remove('active');
         if (deferredPrompt) {
@@ -385,7 +401,7 @@
         }
     }
 
-    // --- 🚀 실시간 채팅 및 공지/우편함 백그라운드 동기화 엔진 ---
+    // 실시간 통신 엔진
     let lastChatId = 0;
     let lastNoticeId = 0;
     let lastPraiseCount = -1;
@@ -406,7 +422,7 @@
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ message: text })
         }).then(() => {
-            syncLiveData(); // 전송 즉시 동기화
+            syncLiveData();
         });
     }
 
@@ -414,7 +430,6 @@
         fetch('/api/live_sync')
             .then(res => res.json())
             .then(data => {
-                // 1. 실시간 채팅 갱신
                 const chatBox = document.getElementById('chatBox');
                 if (data.chats && data.chats.length > 0) {
                     const latestMsg = data.chats[data.chats.length - 1];
@@ -433,7 +448,6 @@
                     chatBox.innerHTML = '<div class="empty-text">아직 대화가 없습니다. 첫 메시지를 보내보세요!</div>';
                 }
 
-                // 2. 실시간 공지사항 갱신
                 const noticeList = document.getElementById('noticeList');
                 if (data.notices && data.notices.length > 0) {
                     const topNotice = data.notices[0];
@@ -456,13 +470,10 @@
                     }
                 }
 
-                // 3. 실시간 칭찬 우편함 갱신
                 if (data.praises) {
                     const count = data.praises.length;
                     if (count !== lastPraiseCount) {
                         lastPraiseCount = count;
-                        
-                        // 뱃지 숫자 갱신
                         const badge = document.getElementById('mailBadge');
                         if (count > 0) {
                             badge.textContent = count;
@@ -476,9 +487,9 @@
                         if (count > 0) {
                             praiseList.innerHTML = data.praises.map(p => `
                                 <div class="mail-item">
-                                    <span class="mail-sender">From. ${p.sender}</span>
-                                    <div style="margin-top: 4px;">${p.content}</div>
-                                    <span class="item-meta">${p.time}</span>
+                                    <span class="mail-sender">From. {{ p.sender }}</span>
+                                    <div style="margin-top: 4px;">{{ p.content }}</div>
+                                    <span class="item-meta">{{ p.time }}</span>
                                 </div>
                             `).join('');
                         } else {
@@ -490,7 +501,6 @@
             .catch(() => {});
     }
 
-    // 접속 즉시 동기화 실행 후 1.5초마다 백그라운드 실시간 갱신
     syncLiveData();
     setInterval(syncLiveData, 1500);
 </script>
