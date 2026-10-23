@@ -7,48 +7,81 @@
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
         body { background: #f8fafc; color: #1e293b; padding: 20px 16px; max-width: 600px; margin: 0 auto; }
-        header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; padding-bottom: 12px; border-bottom: 2px solid #e2e8f0; }
-        h1 { font-size: 20px; font-weight: 700; color: #0f172a; }
-        .nav-right { display: flex; align-items: center; gap: 14px; }
+        
+        /* 상단 헤더 & 프로필 드롭다운 */
+        header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; padding-bottom: 12px; border-bottom: 2px solid #e2e8f0; position: relative; }
+        h1 { font-size: 19px; font-weight: 700; color: #0f172a; }
+        .nav-right { display: flex; align-items: center; gap: 12px; }
+        
         .mail-btn { position: relative; background: none; border: none; font-size: 24px; cursor: pointer; padding: 4px; display: flex; align-items: center; }
         .mail-badge { position: absolute; top: 0; right: -4px; background: #ef4444; color: white; border-radius: 50%; font-size: 11px; font-weight: bold; width: 18px; height: 18px; display: flex; align-items: center; justify-content: center; }
-        .logout-btn { color: #64748b; text-decoration: none; font-size: 14px; font-weight: 600; }
-        .logout-btn:hover { color: #ef4444; }
+
+        /* 닉네임 버튼 & 드롭다운 메뉴 */
+        .user-dropdown-container { position: relative; }
+        .user-btn { background: #e2e8f0; color: #1e293b; border: 1px solid #cbd5e1; border-radius: 20px; padding: 6px 14px; font-size: 14px; font-weight: bold; cursor: pointer; display: flex; align-items: center; gap: 5px; }
+        .user-btn:hover { background: #cbd5e1; }
+        .dropdown-menu { display: none; position: absolute; right: 0; top: 38px; background: white; border: 1px solid #e2e8f0; border-radius: 12px; box-shadow: 0 10px 25px rgba(0,0,0,0.12); width: 160px; z-index: 50; overflow: hidden; }
+        .dropdown-menu.active { display: block; }
+        .dropdown-item { padding: 12px 14px; font-size: 14px; color: #334155; display: flex; align-items: center; gap: 8px; cursor: pointer; text-decoration: none; border-bottom: 1px solid #f1f5f9; }
+        .dropdown-item:last-child { border-bottom: none; }
+        .dropdown-item:hover { background: #f8fafc; color: #0f172a; }
+        .dropdown-item.logout { color: #ef4444; }
+
+        /* 카드 레이아웃 */
         .card { background: white; border-radius: 14px; padding: 18px; margin-bottom: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.04); border: 1px solid #e2e8f0; }
         .card h2 { font-size: 16px; margin-bottom: 12px; display: flex; align-items: center; gap: 6px; }
         form { display: flex; flex-direction: column; gap: 8px; margin-bottom: 14px; }
         input[type="text"], textarea, select { width: 100%; padding: 10px 12px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 14px; outline: none; }
+        input[type="text"]:focus, textarea:focus, select:focus { border-color: #2563eb; }
         textarea { resize: vertical; min-height: 60px; }
         button.action-btn { background: #2563eb; color: white; border: none; padding: 10px; border-radius: 8px; font-weight: 600; cursor: pointer; font-size: 14px; }
         button.action-btn:hover { background: #1d4ed8; }
+        
         .item-list { list-style: none; display: flex; flex-direction: column; gap: 8px; }
         .item { background: #f1f5f9; padding: 10px 12px; border-radius: 8px; font-size: 14px; line-height: 1.4; }
         .item-meta { font-size: 11px; color: #64748b; margin-top: 4px; display: block; }
         .empty-text { font-size: 13px; color: #94a3b8; text-align: center; padding: 8px 0; }
+
+        /* 모달 공통 */
         .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 100; justify-content: center; align-items: center; padding: 16px; }
         .modal-overlay.active { display: flex; }
-        .modal-box { background: white; width: 100%; max-width: 480px; border-radius: 16px; max-height: 85vh; display: flex; flex-direction: column; overflow: hidden; box-shadow: 0 10px 25px rgba(0,0,0,0.2); }
+        .modal-box { background: white; width: 100%; max-width: 440px; border-radius: 16px; max-height: 85vh; display: flex; flex-direction: column; overflow: hidden; box-shadow: 0 10px 25px rgba(0,0,0,0.2); }
         .modal-header { padding: 16px 20px; border-bottom: 1px solid #e2e8f0; display: flex; justify-content: space-between; align-items: center; }
         .modal-header h3 { font-size: 17px; font-weight: bold; }
         .close-btn { background: none; border: none; font-size: 20px; cursor: pointer; color: #64748b; }
         .modal-content { padding: 18px 20px; overflow-y: auto; }
-        .mail-section-title { font-size: 14px; font-weight: bold; color: #475569; margin: 16px 0 8px 0; }
         .mail-item { background: #fef3c7; border: 1px solid #fde68a; padding: 12px; border-radius: 10px; margin-bottom: 8px; font-size: 14px; }
         .mail-sender { font-weight: bold; color: #b45309; }
+
+        /* 날짜 선택 단계 */
+        .step-label { font-size: 13px; font-weight: bold; color: #64748b; margin-top: 10px; margin-bottom: 4px; }
     </style>
 </head>
 <body>
 
 <header>
-    <h1>🏠 {{ user.username }}님의 가족 홈</h1>
+    <h1>🏠 우리 가족 홈</h1>
     <div class="nav-right">
-        <button class="mail-btn" onclick="openMailModal()" title="칭찬 우편함">
+        <!-- 칭찬 우편 버튼 -->
+        <button class="mail-btn" onclick="openModal('mailModal')" title="칭찬 우편함">
             💌
             {% if my_praises|length > 0 %}
             <span class="mail-badge">{{ my_praises|length }}</span>
             {% endif %}
         </button>
-        <a href="/logout" class="logout-btn">로그아웃</a>
+
+        <!-- 닉네임 버튼 & 드롭다운 -->
+        <div class="user-dropdown-container">
+            <button class="user-btn" onclick="toggleDropdown(event)">
+                👤 {{ user.username }} ▾
+            </button>
+            <div class="dropdown-menu" id="userMenu">
+                <div class="dropdown-item" onclick="openModal('birthModal')">🎂 생년월일 정하기</div>
+                <div class="dropdown-item" onclick="openModal('settingModal')">⚙️ 설정</div>
+                <div class="dropdown-item" id="installBtn" onclick="installApp()">📲 앱 설치하기</div>
+                <a href="/logout" class="dropdown-item logout">🚪 로그아웃</a>
+            </div>
+        </div>
     </div>
 </header>
 
@@ -106,29 +139,80 @@
     </ul>
 </section>
 
-<!-- 우편함 모달 창 -->
-<div class="modal-overlay" id="mailModal" onclick="closeMailModal(event)">
+<!-- [모달 1] 생년월일 정하기 모달 (년도 선택 -> 월 선택 -> 일 선택) -->
+<div class="modal-overlay" id="birthModal" onclick="closeModal(event, 'birthModal')">
+    <div class="modal-box" onclick="event.stopPropagation()">
+        <div class="modal-header">
+            <h3>🎂 생년월일 정하기</h3>
+            <button class="close-btn" onclick="closeModalDirect('birthModal')">✕</button>
+        </div>
+        <div class="modal-content">
+            <p style="font-size: 14px; color: #64748b; margin-bottom: 12px;">
+                현재 등록된 생일: <strong>{{ user.birthday if user.birthday else '미등록' }}</strong>
+            </p>
+            <form action="/set_birthday" method="POST">
+                <div class="step-label">1단계: 출생 연도 선택</div>
+                <select name="year" id="yearSelect" onchange="onYearChange()" required>
+                    <option value="" disabled selected>연도를 선택하세요</option>
+                </select>
+
+                <div class="step-label">2단계: 월 선택</div>
+                <select name="month" id="monthSelect" onchange="onMonthChange()" disabled required>
+                    <option value="" disabled selected>월을 선택하세요</option>
+                </select>
+
+                <div class="step-label">3단계: 일 선택</div>
+                <select name="day" id="daySelect" disabled required>
+                    <option value="" disabled selected>일을 선택하세요</option>
+                </select>
+
+                <button type="submit" class="action-btn" style="margin-top: 14px; background: #10b981;">생년월일 저장</button>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- [모달 2] 설정 모달 -->
+<div class="modal-overlay" id="settingModal" onclick="closeModal(event, 'settingModal')">
+    <div class="modal-box" onclick="event.stopPropagation()">
+        <div class="modal-header">
+            <h3>⚙️ 설정</h3>
+            <button class="close-btn" onclick="closeModalDirect('settingModal')">✕</button>
+        </div>
+        <div class="modal-content" style="font-size: 14px; line-height: 1.6;">
+            <p><strong>가족 공간 정보</strong></p>
+            <p style="color: #64748b; margin-top: 4px;">가족 초대 코드: <strong>서희스타일스</strong></p>
+            <p style="color: #64748b;">내 계정 닉네임: <strong>{{ user.username }}</strong></p>
+            <hr style="margin: 14px 0; border: none; border-top: 1px solid #e2e8f0;">
+            <p style="color: #0f172a; font-weight: 600;">알림 및 자동 업데이트</p>
+            <p style="color: #64748b; font-size: 13px; margin-top: 4px;">PWA 앱 캐시 및 자동 로그인 세션이 영구 유지됩니다.</p>
+        </div>
+    </div>
+</div>
+
+<!-- [모달 3] 칭찬 우편함 모달 -->
+<div class="modal-overlay" id="mailModal" onclick="closeModal(event, 'mailModal')">
     <div class="modal-box" onclick="event.stopPropagation()">
         <div class="modal-header">
             <h3>💌 칭찬 우편함</h3>
-            <button class="close-btn" onclick="closeMailModal()">✕</button>
+            <button class="close-btn" onclick="closeModalDirect('mailModal')">✕</button>
         </div>
         <div class="modal-content">
-            <div class="mail-section-title">칭찬 편지 쓰기</div>
+            <div style="font-weight: bold; margin-bottom: 8px;">칭찬 편지 쓰기</div>
             <form action="/add_praise" method="POST">
                 <select name="receiver" required>
                     <option value="" disabled selected>칭찬받을 가족 선택</option>
                     {% for u in all_users %}
+                    {% if u.username != user.username %}
                     <option value="{{ u.username }}">{{ u.username }}</option>
+                    {% endif %}
                     {% endfor %}
                 </select>
                 <textarea name="content" placeholder="따뜻한 칭찬 한마디를 적어보세요..." required></textarea>
                 <button type="submit" class="action-btn" style="background: #10b981;">편지 보내기</button>
             </form>
-
             <hr style="border: none; border-top: 1px dashed #cbd5e1; margin: 16px 0;">
-
-            <div class="mail-section-title">내가 받은 칭찬 ({{ my_praises|length }})</div>
+            <div style="font-weight: bold; margin-bottom: 8px;">내가 받은 칭찬 ({{ my_praises|length }})</div>
             <div class="item-list">
                 {% for praise in my_praises %}
                 <div class="mail-item">
@@ -145,21 +229,98 @@
 </div>
 
 <script>
-    function openMailModal() {
-        document.getElementById('mailModal').classList.add('active');
+    // 드롭다운 토글
+    function toggleDropdown(e) {
+        e.stopPropagation();
+        document.getElementById('userMenu').classList.toggle('active');
     }
-    function closeMailModal(e) {
-        if (!e || e.target.id === 'mailModal' || e.target.classList.contains('close-btn')) {
-            document.getElementById('mailModal').classList.remove('active');
+    window.addEventListener('click', () => {
+        document.getElementById('userMenu').classList.remove('active');
+    });
+
+    // 모달 제어
+    function openModal(id) {
+        document.getElementById('userMenu').classList.remove('active');
+        document.getElementById(id).classList.add('active');
+    }
+    function closeModalDirect(id) {
+        document.getElementById(id).classList.remove('active');
+    }
+    function closeModal(e, id) {
+        if (e.target.id === id) {
+            document.getElementById(id).classList.remove('active');
         }
     }
 
-    // PWA 자동 캐시 갱신 및 앱 자동 업데이트 보장
+    // --- 생년월일 연쇄 선택 로직 (년 -> 월 -> 일) ---
+    const yearSelect = document.getElementById('yearSelect');
+    const monthSelect = document.getElementById('monthSelect');
+    const daySelect = document.getElementById('daySelect');
+
+    // 연도 목록 생성 (1940년 ~ 현재 연도)
+    const currentYear = new Date().getFullYear();
+    for (let y = currentYear; y >= 1940; y--) {
+        const opt = document.createElement('option');
+        opt.value = y;
+        opt.textContent = `${y}년`;
+        yearSelect.appendChild(opt);
+    }
+
+    // 연도 선택 시 -> 월 활성화
+    function onYearChange() {
+        monthSelect.innerHTML = '<option value="" disabled selected>월을 선택하세요</option>';
+        daySelect.innerHTML = '<option value="" disabled selected>일을 선택하세요</option>';
+        daySelect.disabled = true;
+
+        for (let m = 1; m <= 12; m++) {
+            const opt = document.createElement('option');
+            opt.value = m;
+            opt.textContent = `${m}월`;
+            monthSelect.appendChild(opt);
+        }
+        monthSelect.disabled = false;
+    }
+
+    // 월 선택 시 -> 일수 계산(윤년 포함) 후 일 활성화
+    function onMonthChange() {
+        daySelect.innerHTML = '<option value="" disabled selected>일을 선택하세요</option>';
+        const year = parseInt(yearSelect.value);
+        const month = parseInt(monthSelect.value);
+        
+        // 해당 년/월의 말일 계산
+        const daysInMonth = new Date(year, month, 0).getDate();
+
+        for (let d = 1; d <= daysInMonth; d++) {
+            const opt = document.createElement('option');
+            opt.value = d;
+            opt.textContent = `${d}일`;
+            daySelect.appendChild(opt);
+        }
+        daySelect.disabled = false;
+    }
+
+    // --- PWA 앱 설치 이벤트 연결 ---
+    let deferredPrompt = null;
+    window.addEventListener('beforeinstallprompt', (e) => {
+        e.preventDefault();
+        deferredPrompt = e;
+    });
+
+    function installApp() {
+        if (deferredPrompt) {
+            deferredPrompt.prompt();
+            deferredPrompt.userChoice.then((choiceResult) => {
+                deferredPrompt = null;
+            });
+        } else {
+            alert('스마트폰 브라우저 메뉴의 [홈 화면에 추가] 또는 PC 브라우저 주소창 우측 끝의 [설치] 아이콘을 통해 설치하실 수 있습니다.');
+        }
+    }
+
+    // 자동 업데이트
     if ('serviceWorker' in navigator) {
-        navigator.serviceWorker.getRegistrations().then(function(registrations) {
-            for (let registration of registrations) {
-                registration.update();
-            }
+        navigator.serviceWorker.getRegistrations().then((registrations) => {
+            for (let reg of registrations) reg.update();
         });
     }
 </script>
